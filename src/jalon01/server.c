@@ -98,19 +98,10 @@ int main(int argc, char** argv)
       c_sock = do_accept(sock, c_addr, &c_addrlen);
       printf("> Connection accepted \n");
 
-      int n;
-
       while(1){
         printf("> Waiting for message\n");
         //read what the client has to say
         do_read(c_sock, buffer);
-
-        // we write back to the client
-        /*n = write(c_sock,buffer,BUFFER_SIZE);
-        if (n < 0) {
-          perror("ERROR writing to socket");
-          exit(1);
-        }*/
         do_write(c_sock, buffer);
 
         //disconect client if "/quit"
