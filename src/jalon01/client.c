@@ -73,15 +73,15 @@ int main(int argc,char** argv)
 
 //get the socket
 int s = do_socket(AF_INET, SOCK_STREAM, 0);
-fprintf(stdout,"socket crée ? :%d \n",errno);
+fprintf(stdout,"socket crée \n");
 
 struct sockaddr_in c_addr;
 init_client_addr(atoi(argv[2]), &c_addr);
-fprintf(stdout,"init_client_addr ? :%d \n",errno);
+fprintf(stdout,"init_client_add \n");
 
 //connect to remote socket
 do_connect(s, (const struct sockaddr *)&c_addr, sizeof(c_addr));
-fprintf(stdout,"connection réussie ? :%d \n",errno);
+fprintf(stdout,"connection réussi \n");
 
 
 //get user input
