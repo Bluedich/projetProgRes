@@ -97,13 +97,13 @@ int main(int argc, char** argv)
       //accept connection from client
       c_addrlen = sizeof(*c_addr);
       c_sock = do_accept(sock, c_addr, &c_addrlen);
-      fprintf(stdout,"Connextion accepté : %d \n",errno);
+      fprintf(stdout,"> Connextion accepté \n");
 
       while(1){
         //read what the client has to say
         //do_read(c_sock, buffer);
         //recv(c_sock, buffer, sizeof(buffer), 0);
-        fprintf(stdout,"En attente d'un message : %d \n",errno);
+        fprintf(stdout,"> En attente d'un message \n");
 
         bzero(buffer,256);
         int n = read( c_sock,buffer,255 );
@@ -112,7 +112,9 @@ int main(int argc, char** argv)
           perror("ERROR reading from socket");
           exit(1);
         }
-        fprintf(stdout,"message reçu : %s\n",buffer, errno);
+
+
+        fprintf(stdout,"> Message reçu : %s",buffer, errno);
 
         ////we write back to the client
         //do_write(c_sock, buffer); // anciennement
@@ -123,29 +125,30 @@ int main(int argc, char** argv)
         }
 
         if(strncmp(buffer,"/quit",5)==0){
-          fprintf(stdout,"Client out\n");
+          fprintf(stdout,"> Client out\n");
           break;
         }
         //break;    // pouquoi ce break ?
       }
 
       //clean up client socket
-      free(c_addr);
-      free(buffer);
+      //free(c_addr);
+      //free(buffer);
       close(c_sock);
 
       //check if server is stopped
       if(read(0, in_buf, 6) == -1)
         error("Error reading from stdin\n");
-      if(strncmp(in_buf,"/quit\0")==0){
+      if(strncmp(in_buf,"/quit",5)==0){
         break;
       }
+
       break; // temporaire
-    }
+   }
 
     //clean up server socket
-    free(s_addr);
-    free(in_buf);
+    //free(s_addr);
+    //free(in_buf);
     close(sock);
     return 0;
 }
