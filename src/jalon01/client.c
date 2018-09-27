@@ -8,24 +8,12 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#include <readline/readline.h>
-#include <readline/history.h>
+#define BUFFER_SIZE 280
 
-#include <errno.h>
-
-
-
-int do_socket(int domain, int type, int protocol) {
-    int sockfd;
-    int yes = 1;
-//create the socket
-    sockfd = socket(domain, type, protocol);
-//check for socket validity
-
-// set socket option, to prevent "already in use" issue when rebooting the server right on
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
-        error("ERROR setting socket options");
-    return sockfd;
+void error(const char *msg)
+{
+    perror(msg);
+    exit(1);
 }
 
 void get_addr_info(const char* addr, const char* port, struct addrinfo** res){
@@ -45,88 +33,110 @@ void get_addr_info(const char* addr, const char* port, struct addrinfo** res){
   }
 }
 
-void do_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
-    int res = connect(sockfd, addr, addrlen);
-    if (res != 0) {
-      printf("Probleme de connextion au server\n");
+int do_socket() {
+    int sockfd;
+    int yes = 1;
+    //create the socket
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    //check for socket validity
+    if(sockfd==-1){
+      error("ERROR creating socket");
     }
+    printf("> Socket created.\n");
+    // set socket option, to prevent "already in use" issue when rebooting the server right on
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+        error("ERROR setting socket options");
 
+    return sockfd;
 }
 
-ssize_t do_read(int fd, void *buf, size_t count ){
-  return read( fd, buf, count);
+void do_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
+  assert(addr);
+  int res = connect(sockfd, addr, addrlen);
+  if (res != 0) {
+    error("ERROR connecting");
+  }
+  printf("> Connected to host.\n");
 }
 
-ssize_t do_write(int fd, void *buf, size_t count){
-  return write(fd, buf, count);
+int readline(int fd, char * buffer, int maxlen){
+  assert(buffer);
+  memset(buffer, 0, maxlen);
+  int size_read = read(fd, buffer, maxlen);
+  if(size_read==-1){
+    error("ERROR reading line");
+  }
+  return size_read;
 }
 
-int main(int argc,char** argv)
-{
+int sendline(int fd, char * buffer, int maxlen){
+  assert(buffer);
+  int to_send = strlen(buffer);
+  int sent;
+  int i=0;
+  while(to_send>0 || i>1000){ //try maximum of 1000 times
+    sent=write(fd, buffer, to_send);
+    if (sent==-1)
+      error("ERROR sending line");
+    to_send-=sent;
+    i++;
+  }
+  if(to_send)
+    printf("> Only managed to send %d out of %d bytes of the message.\n", ((int) strlen(buffer))-to_send, (int) strlen(buffer));
+  else
+    printf("> All %d bytes of message succesfully sent.\n", (int) strlen(buffer));
+}
+
+void handle_client_message(int sock, char * buffer, int * cont){
+  assert(buffer);
+  if(strncmp(buffer,"/quit",5)==0){
+    printf("> Stopping client\n");
+    *cont=0; //stop client
+  }
+  sendline(sock, buffer, BUFFER_SIZE);
+}
+
+void handle_server_response(int sock, char * buffer){
+  assert(buffer);
+  memset(buffer,0, BUFFER_SIZE);
+  int size_read = readline(sock, buffer, BUFFER_SIZE);
+  printf("> Read %d bytes from server\n",size_read);
+  printf("Server response : %s\n", buffer);
+}
+
+int main(int argc,char** argv) {
 
     if (argc != 3)
     {
         fprintf(stderr,"usage: RE216_CLIENT hostname port\n");
         return 1;
     }
-    char buffer[256];
-//get address info from the server
-struct addrinfo* res;
-//get address info from the server
-get_addr_info(argv[1], argv[2], &res);
 
-//get the socket
-int s = do_socket(AF_INET, SOCK_STREAM, 0);
-fprintf(stdout,"socket crée \n");
+    struct addrinfo* res;
+    //get address info from the server
+    get_addr_info(argv[1], argv[2], &res);
 
-//connect to remote socket
-//connect to remote socket
-do_connect(s, res->ai_addr, res->ai_addrlen);
-freeaddrinfo(res); //no longer needed
-//do_connect(s, (const struct sockaddr *)&c_addr, sizeof(c_addr));
-//fprintf(stdout,"connection réussi \n");
+    //get the socket
+    int sock = do_socket();
 
+    //connect to remote socket
+    do_connect(sock, res->ai_addr, res->ai_addrlen);
+    freeaddrinfo(res); //no longer needed
 
-//get user input
-//const void *buf = readline();         // uselss
-while (1){
-  printf("> Please enter the message: ");
-  bzero(buffer,256);
-  fgets(buffer,255,stdin);
+    char buffer[BUFFER_SIZE];
+    int cont=1;
 
-  //send message to the server
-  int n = write(s, buffer, strlen(buffer));
+    do{
+      //get user input
+      printf("> ");
+      fflush(stdout); //to make sure above printf is displayed
+      readline(0, buffer, sizeof(buffer));
+      //send message to the server
+      handle_client_message(sock, buffer, &cont);
 
-  if (n < 0) {
-    perror("ERROR writing to socket");
-    exit(1);
-  }
-  //char *txt = readline(" Quel est votre message ? :");  // uselss
-  //ssize_t reslt = send(s, buffer, sizeof(buffer), 0);   // useles
-
-  // Now read server response
-   bzero(buffer,256);
-   n = read(s, buffer, 255);
-
-   if (n < 0) {
-      perror("ERROR reading from socket");
-      exit(1);
-   }
-
-   if(strncmp(buffer,"/quit",5)==0){
-     fprintf(stdout,"> Client down\n");
-     break;
-   }
-   printf("> [SERVER] : %s",buffer);
-
-}
-
-
-
-//handle_client_message()
-
-
+      //receive message from server
+      handle_server_response(sock, buffer);
+    }while(cont);
     return 0;
-
-
 }
