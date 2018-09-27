@@ -91,7 +91,6 @@ int sendline(int fd, char * buffer, int maxlen){
 void handle_client_message(int sock, char * buffer, int * cont){
   assert(buffer);
   if(strncmp(buffer,"/quit",5)==0){
-    printf("> Stopping client\n");
     *cont=0; //stop client
   }
   sendline(sock, buffer, BUFFER_SIZE);
@@ -102,7 +101,7 @@ void handle_server_response(int sock, char * buffer){
   memset(buffer,0, BUFFER_SIZE);
   int size_read = readline(sock, buffer, BUFFER_SIZE);
   printf("> Read %d bytes from server\n",size_read);
-  printf("Server response : %s\n", buffer);
+  printf("> [Server] : %s", buffer);
 }
 
 int main(int argc,char** argv) {
@@ -138,5 +137,7 @@ int main(int argc,char** argv) {
       //receive message from server
       handle_server_response(sock, buffer);
     }while(cont);
+
+    printf("> Stopping client\n");
     return 0;
 }

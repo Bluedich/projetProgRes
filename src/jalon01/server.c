@@ -8,6 +8,7 @@
 #include <assert.h>
 
 #include <errno.h>
+#define BUFFER_SIZE 280
 
 void error(const char *msg)
 {
@@ -18,7 +19,7 @@ void error(const char *msg)
 int do_socket(){
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if(fd == -1)
-    error("Error : can't create socket");
+    error("ERROR creating socket");
   return fd;
 }
 
@@ -31,20 +32,21 @@ void init_serv_addr(int port, struct sockaddr_in * s_addr){
 void do_bind(int sock, struct sockaddr_in * s_addr){
   assert(s_addr);
   if (bind(sock, (const struct sockaddr *) s_addr, sizeof(*s_addr)) == -1)
-    error("Error : can't bind");
+    error("ERROR binding");
 }
 
 int do_accept(int sock, struct sockaddr * c_addr, int * c_addrlen){
   int c_sock = accept(sock, c_addr, c_addrlen);
   if(c_sock == -1)
-    error("Error : can't accept");
+    error("ERROR accepting");
 }
 
 void do_read(int sock, char * buffer){
   assert(buffer);
-  if(read(sock, buffer, 280) == -1)
+  bzero(buffer,BUFFER_SIZE);
+  if(read(sock, buffer, BUFFER_SIZE) == -1)
     error("Error reading from client");
-  printf(buffer);
+  printf("> [Client] : %s",buffer);
 }
 
 void do_write(int sock, char * buffer){
@@ -64,7 +66,7 @@ int main(int argc, char** argv)
 
     if (argc != 2)
     {
-        fprintf(stderr, "usage: RE216_SERVER port\n");
+        printf("usage: RE216_SERVER port\n");
         return 1;
     }
     //create the socket, check for validity!
@@ -80,12 +82,12 @@ int main(int argc, char** argv)
 
     //specify the socket to be a server socket and listen for at most 20 concurrent client (but only one use Jalon01)
     listen(sock, 20);
-    fprintf(stdout,"En attente de connection : \n");
+    printf("> Waiting for connection : \n");
 
     //buffer init
     char * in_buf = (char *) malloc(6*sizeof(char));
-    char * buffer = (char *) malloc(280*sizeof(char));
-    struct sockaddr * c_addr;
+    char buffer[BUFFER_SIZE];
+    struct sockaddr * c_addr = (struct sockaddr *) malloc(sizeof(struct sockaddr));
     int c_addrlen;
     int c_sock;
 
@@ -94,37 +96,33 @@ int main(int argc, char** argv)
       //accept connection from client
       c_addrlen = sizeof(*c_addr);
       c_sock = do_accept(sock, c_addr, &c_addrlen);
-      fprintf(stdout,"> Connextion accepté \n");
+      printf("> Connection accepted \n");
+
+      int n;
 
       while(1){
-        fprintf(stdout,"> En attente d'un message \n ");
+        printf("> Waiting for message\n");
         //read what the client has to say
-        bzero(buffer,256);
-        int n = read( c_sock,buffer,255 );
-        if (n < 0) {
-          perror("ERROR reading from socket");
-          exit(1);
-        }
-        fprintf(stdout," > Message reçu : %s",buffer);
+        do_read(c_sock, buffer);
 
         // we write back to the client
-        n = write(c_sock,buffer,255);
+        /*n = write(c_sock,buffer,BUFFER_SIZE);
         if (n < 0) {
           perror("ERROR writing to socket");
           exit(1);
-        }
+        }*/
+        do_write(c_sock, buffer);
 
         //disconect client if "/quit"
         if(strncmp(buffer,"/quit",5)==0){
-          fprintf(stdout,"> Client out\n");
+          printf("> Client disconnected\n");
           break;
         }
       }
 
     //clean up client socket
-      free(buffer);
-      close(c_sock);
-      break;        // only one client quit server if client quit
+    //free(buffer);
+    close(c_sock);
    }
 
     //clean up server socket
