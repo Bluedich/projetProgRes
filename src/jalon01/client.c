@@ -28,21 +28,6 @@ int do_socket(int domain, int type, int protocol) {
     return sockfd;
 }
 
-
-void init_client_addr(int port, struct sockaddr_in *client_addr) {
-//clean the client_add structure
-    memset(client_addr,'\0', sizeof(*client_addr) );  //
-//cast the port from a string to an int
-//internet family protocol
-    client_addr->sin_family = AF_INET;
-//we bind to the IP of the server (@ de loopback)
-    inet_aton("127.0.0.1", &client_addr->sin_addr );
-//    fprintf(stdout,"serv_addr ? :%d erreur %d\n",&client_addr->sin_addr, errno);
-//we bind on the tcp port specified
-    client_addr->sin_port = htons(port);
-
-}
-
 void get_addr_info(const char* addr, const char* port, struct addrinfo** res){
   assert(res);
   int status;
