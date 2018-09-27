@@ -86,10 +86,12 @@ fprintf(stdout,"connection réussie ? :%d \n",errno);
 
 //get user input
 //const void *buf = readline();         // uselss
-
+while (1){
   printf("Please enter the message: ");
    bzero(buffer,256);
    fgets(buffer,255,stdin);
+
+//send message to the server
 
    int n = write(s, buffer, strlen(buffer));
 
@@ -109,10 +111,19 @@ fprintf(stdout,"connection réussie ? :%d \n",errno);
       exit(1);
    }
 
+   fprintf(stdout,"message envoyé : %s\n",buffer);
+
+   if(strncmp(buffer,"/quit",5)==0){
+     fprintf(stdout,"Client down\n");
+     break;
+   }
+
    printf("[SERVER] : %s\n",buffer);
 
+}
 
-//send message to the server
+
+
 //handle_client_message()
 
 
