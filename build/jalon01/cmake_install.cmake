@@ -1,4 +1,4 @@
-# Install script for directory: /net/t/hstinson/ProgRes/src/jalon01
+# Install script for directory: /net/t/hstinson/ProgRes/projetProgRes/src/jalon01
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)

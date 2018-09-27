@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -42,6 +43,22 @@ void init_client_addr(int port, struct sockaddr_in *client_addr) {
 
 }
 
+void get_addr_info(const char* addr, const char* port, struct addrinfo** res){
+  assert(res);
+  int status;
+  struct addrinfo hints;
+
+  memset(&hints,0,sizeof(hints));
+
+  hints.ai_family=AF_INET;
+  hints.ai_socktype=SOCK_STREAM;
+
+  status = getaddrinfo(addr,port,&hints,res);
+  if(status!=0){
+    printf("getaddrinfo: returns %d aka %s\n", status, gai_strerror(status)); //fonction qui renvoie un message en rapport avec l'erreur détectée
+    exit(1);
+  }
+}
 
 void do_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
     int res = connect(sockfd, addr, addrlen);
@@ -69,38 +86,38 @@ int main(int argc,char** argv)
     }
     char buffer[256];
 //get address info from the server
-//get_addr_info();
+struct addrinfo* res;
+//get address info from the server
+get_addr_info(argv[1], argv[2], &res);
 
 //get the socket
 int s = do_socket(AF_INET, SOCK_STREAM, 0);
 fprintf(stdout,"socket crée \n");
 
-struct sockaddr_in c_addr;
-init_client_addr(atoi(argv[2]), &c_addr);
-fprintf(stdout,"init_client_add \n");
-
 //connect to remote socket
-do_connect(s, (const struct sockaddr *)&c_addr, sizeof(c_addr));
-fprintf(stdout,"connection réussi \n");
+//connect to remote socket
+do_connect(s, res->ai_addr, res->ai_addrlen);
+freeaddrinfo(res); //no longer needed
+//do_connect(s, (const struct sockaddr *)&c_addr, sizeof(c_addr));
+//fprintf(stdout,"connection réussi \n");
 
 
 //get user input
 //const void *buf = readline();         // uselss
 while (1){
   printf("> Please enter the message: ");
-   bzero(buffer,256);
-   fgets(buffer,255,stdin);
+  bzero(buffer,256);
+  fgets(buffer,255,stdin);
 
-//send message to the server
+  //send message to the server
+  int n = write(s, buffer, strlen(buffer));
 
-   int n = write(s, buffer, strlen(buffer));
-
-   if (n < 0) {
-     perror("ERROR writing to socket");
-     exit(1);
+  if (n < 0) {
+    perror("ERROR writing to socket");
+    exit(1);
   }
-//char *txt = readline(" Quel est votre message ? :");  // uselss
-//ssize_t reslt = send(s, buffer, sizeof(buffer), 0);   // useles
+  //char *txt = readline(" Quel est votre message ? :");  // uselss
+  //ssize_t reslt = send(s, buffer, sizeof(buffer), 0);   // useles
 
   // Now read server response
    bzero(buffer,256);

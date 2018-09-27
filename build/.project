@@ -47,7 +47,7 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildLocation</key>
-					<value>/net/t/hstinson/ProgRes/build</value>
+					<value>/net/t/hstinson/ProgRes/projetProgRes/build</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.useDefaultBuildCmd</key>
@@ -83,7 +83,7 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.build.location</key>
-					<value>/net/t/hstinson/ProgRes/build</value>
+					<value>/net/t/hstinson/ProgRes/projetProgRes/build</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.autoBuildTarget</key>
@@ -111,7 +111,7 @@
 		<link>
 			<name>[Source directory]</name>
 			<type>2</type>
-			<location>/net/t/hstinson/ProgRes/src</location>
+			<location>/net/t/hstinson/ProgRes/projetProgRes/src</location>
 		</link>
 		<link>
 			<name>[Subprojects]</name>
@@ -121,12 +121,12 @@
 		<link>
 			<name>[Subprojects]/RE216</name>
 			<type>2</type>
-			<location>/net/t/hstinson/ProgRes/src</location>
+			<location>/net/t/hstinson/ProgRes/projetProgRes/src</location>
 		</link>
 		<link>
 			<name>[Subprojects]/RE216_JALON01</name>
 			<type>2</type>
-			<location>/net/t/hstinson/ProgRes/src/jalon01</location>
+			<location>/net/t/hstinson/ProgRes/projetProgRes/src/jalon01</location>
 		</link>
 		<link>
 			<name>[Targets]</name>
@@ -151,7 +151,7 @@
 		<link>
 			<name>[Targets]/[exe] RE216_JALON01_CLIENT/Source Files/client.c</name>
 			<type>1</type>
-			<location>/net/t/hstinson/ProgRes/src/jalon01/client.c</location>
+			<location>/net/t/hstinson/ProgRes/projetProgRes/src/jalon01/client.c</location>
 		</link>
 		<link>
 			<name>[Targets]/[exe] RE216_JALON01_CLIENT/Header Files</name>
@@ -191,7 +191,7 @@
 		<link>
 			<name>[Targets]/[exe] RE216_JALON01_SERVER/Source Files/server.c</name>
 			<type>1</type>
-			<location>/net/t/hstinson/ProgRes/src/jalon01/server.c</location>
+			<location>/net/t/hstinson/ProgRes/projetProgRes/src/jalon01/server.c</location>
 		</link>
 		<link>
 			<name>[Targets]/[exe] RE216_JALON01_SERVER/Header Files</name>
