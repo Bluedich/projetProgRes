@@ -57,7 +57,7 @@ void do_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
   if (res != 0) {
     error("ERROR connecting");
   }
-  printf("> Connected to host.\n");
+  //printf("> Connected to host.\n");   // no longer needed, un message du server fait la bienvenu
 }
 
 int readline(int fd, char * buffer, int maxlen){
@@ -100,7 +100,7 @@ void handle_server_response(int sock, char * buffer){
   assert(buffer);
   memset(buffer,0, BUFFER_SIZE);
   int size_read = readline(sock, buffer, BUFFER_SIZE);
-  printf("> Read %d bytes from server\n",size_read);
+  //printf("> Read %d bytes from server\n",size_read);  // test
   printf("> [Server] : %s", buffer);
 }
 
@@ -118,13 +118,15 @@ int main(int argc,char** argv) {
 
     //get the socket
     int sock = do_socket();
-
     //connect to remote socket
     do_connect(sock, res->ai_addr, res->ai_addrlen);
     freeaddrinfo(res); //no longer needed
 
+
     char buffer[BUFFER_SIZE];
     int cont=1;
+
+    handle_server_response(sock, buffer); // message de bienvenu du server
 
     do{
       //get user input

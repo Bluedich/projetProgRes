@@ -11,7 +11,8 @@
 #include <errno.h>
 
 #define BUFFER_SIZE 280
-#define MAX_CL 2
+#define MAX_CL 20
+
 
 void error(const char *msg)
 {
@@ -74,12 +75,14 @@ void do_write(int sock, char * buffer){
   }
 }
 
+
 int get_smallest_available_fd(struct pollfd * fds){
   int i;
   for(i=2; i<MAX_CL+2; i++){
     if(fds[i].fd==-1)
       return i;
   }
+  return -1;
   error("ERROR too many connected clients");
 }
 
@@ -145,10 +148,22 @@ int main(int argc, char** argv)
 
       if(fds[1].revents & POLLIN){
         //accept connection from client
-        c_addrlen = sizeof(*c_addr);
-        c_sock = do_accept(sock, c_addr, &c_addrlen);
-        fds[get_smallest_available_fd(fds)].fd = c_sock;
-        printf("> Connection accepted \n");
+        if(get_smallest_available_fd(fds) != -1){   // if there is too many client, dined the connection
+          c_addrlen = sizeof(*c_addr);
+          c_sock = do_accept(sock, c_addr, &c_addrlen);
+          fds[get_smallest_available_fd(fds)].fd = c_sock;
+          printf("> Connection accepted \n");
+          do_write(c_sock, "Bienvenue sur le server.\n");    // welcome message for the client
+        }
+        else{
+          c_addrlen = sizeof(*c_addr);
+          c_sock = do_accept(sock, c_addr, &c_addrlen);
+          fds[get_smallest_available_fd(fds)].fd = c_sock;
+          do_write(c_sock, "Server cannot accept incoming connections anymore. Please try again later.\n");
+          printf("> Connection dined, too many client\n");
+          fds[i].fd=-1;            //we want to ignore this fd next loops
+          close(c_sock);
+        }
       }
 
       for(i=2;i<MAX_CL+2; i++){
@@ -156,11 +171,15 @@ int main(int argc, char** argv)
           c_sock = fds[i].fd;
           //read what the client has to say
           do_read(c_sock, buffer);
+
+
           //server response
           //disconnect client if "/quit in stdin"
+          //          if(strncmp(buffer,"/quit",5)==0){
+
           if(strncmp(buffer,"/quit",5)==0){
             printf("> Client disconnected\n");
-            fds[i].fd=-1; //we want to ignore this fd next loops
+            fds[i].fd=-1;              //we want to ignore this fd next loops
             close(c_sock);
             break;
           }
