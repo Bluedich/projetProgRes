@@ -1,4 +1,4 @@
-# Install script for directory: /net/t/hstinson/ProgRes/projetProgRes/src
+# Install script for directory: /net/t/hstinson/ProgRes/projetProgRes/src/jalon02
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -32,19 +32,3 @@ IF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
   SET(CMAKE_INSTALL_SO_NO_EXE "0")
 ENDIF(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 
-IF(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  # Include the install script for each subdirectory.
-  INCLUDE("/net/t/hstinson/ProgRes/projetProgRes/build/jalon02/cmake_install.cmake")
-
-ENDIF(NOT CMAKE_INSTALL_LOCAL_ONLY)
-
-IF(CMAKE_INSTALL_COMPONENT)
-  SET(CMAKE_INSTALL_MANIFEST "install_manifest_${CMAKE_INSTALL_COMPONENT}.txt")
-ELSE(CMAKE_INSTALL_COMPONENT)
-  SET(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
-ENDIF(CMAKE_INSTALL_COMPONENT)
-
-FILE(WRITE "/net/t/hstinson/ProgRes/projetProgRes/build/${CMAKE_INSTALL_MANIFEST}" "")
-FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/net/t/hstinson/ProgRes/projetProgRes/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
-ENDFOREACH(file)

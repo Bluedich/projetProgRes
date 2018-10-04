@@ -297,14 +297,14 @@
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name="[exe] RE216_JALON01_CLIENT" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name="[exe] RE216_JALON01_CLIENT" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>RE216_JALON01_CLIENT</buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name="[exe] RE216_JALON01_CLIENT/fast" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name="[exe] RE216_JALON01_CLIENT/fast" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>RE216_JALON01_CLIENT/fast</buildTarget>
@@ -320,19 +320,19 @@
 </target>
 <target name="Clean" path="[Targets]/[exe] RE216_JALON01_CLIENT" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/cmake</buildCommand>
-<buildArguments>-E chdir "/net/t/hstinson/ProgRes/projetProgRes/build/jalon01" "/usr/bin/cmake" -P "CMakeFiles/RE216_JALON01_CLIENT.dir/cmake_clean.cmake"</buildArguments>
+<buildArguments>-E chdir "/net/t/hstinson/ProgRes/projetProgRes/build/jalon02" "/usr/bin/cmake" -P "CMakeFiles/RE216_JALON01_CLIENT.dir/cmake_clean.cmake"</buildArguments>
 <buildTarget></buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name="[exe] RE216_JALON01_SERVER" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name="[exe] RE216_JALON01_SERVER" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>RE216_JALON01_SERVER</buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name="[exe] RE216_JALON01_SERVER/fast" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name="[exe] RE216_JALON01_SERVER/fast" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>RE216_JALON01_SERVER/fast</buildTarget>
@@ -348,61 +348,82 @@
 </target>
 <target name="Clean" path="[Targets]/[exe] RE216_JALON01_SERVER" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/cmake</buildCommand>
-<buildArguments>-E chdir "/net/t/hstinson/ProgRes/projetProgRes/build/jalon01" "/usr/bin/cmake" -P "CMakeFiles/RE216_JALON01_SERVER.dir/cmake_clean.cmake"</buildArguments>
+<buildArguments>-E chdir "/net/t/hstinson/ProgRes/projetProgRes/build/jalon02" "/usr/bin/cmake" -P "CMakeFiles/RE216_JALON01_SERVER.dir/cmake_clean.cmake"</buildArguments>
 <buildTarget></buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name=": all" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name=": all" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>all</buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name=": clean" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name=": clean" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>clean</buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name="[obj] client.c.o" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name="[obj] client.c.o" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>client.c.o</buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name="[pre] client.c.i" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name="[pre] client.c.i" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>client.c.i</buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name="[to asm] client.c.s" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name="[to asm] client.c.s" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>client.c.s</buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name="[obj] server.c.o" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name="[obj] common.c.o" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments>-j8</buildArguments>
+<buildTarget>common.c.o</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="[pre] common.c.i" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments>-j8</buildArguments>
+<buildTarget>common.c.i</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="[to asm] common.c.s" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<buildCommand>/usr/bin/gmake</buildCommand>
+<buildArguments>-j8</buildArguments>
+<buildTarget>common.c.s</buildTarget>
+<stopOnError>true</stopOnError>
+<useDefaultCommand>false</useDefaultCommand>
+</target>
+<target name="[obj] server.c.o" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>server.c.o</buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name="[pre] server.c.i" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name="[pre] server.c.i" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>server.c.i</buildTarget>
 <stopOnError>true</stopOnError>
 <useDefaultCommand>false</useDefaultCommand>
 </target>
-<target name="[to asm] server.c.s" path="jalon01" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
+<target name="[to asm] server.c.s" path="jalon02" targetID="org.eclipse.cdt.make.MakeTargetBuilder">
 <buildCommand>/usr/bin/gmake</buildCommand>
 <buildArguments>-j8</buildArguments>
 <buildTarget>server.c.s</buildTarget>

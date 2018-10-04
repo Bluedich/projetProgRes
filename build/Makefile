@@ -111,7 +111,7 @@ RE216_JALON01_CLIENT: cmake_check_build_system
 
 # fast build rule for target.
 RE216_JALON01_CLIENT/fast:
-	$(MAKE) -f jalon01/CMakeFiles/RE216_JALON01_CLIENT.dir/build.make jalon01/CMakeFiles/RE216_JALON01_CLIENT.dir/build
+	$(MAKE) -f jalon02/CMakeFiles/RE216_JALON01_CLIENT.dir/build.make jalon02/CMakeFiles/RE216_JALON01_CLIENT.dir/build
 .PHONY : RE216_JALON01_CLIENT/fast
 
 #=============================================================================
@@ -124,7 +124,7 @@ RE216_JALON01_SERVER: cmake_check_build_system
 
 # fast build rule for target.
 RE216_JALON01_SERVER/fast:
-	$(MAKE) -f jalon01/CMakeFiles/RE216_JALON01_SERVER.dir/build.make jalon01/CMakeFiles/RE216_JALON01_SERVER.dir/build
+	$(MAKE) -f jalon02/CMakeFiles/RE216_JALON01_SERVER.dir/build.make jalon02/CMakeFiles/RE216_JALON01_SERVER.dir/build
 .PHONY : RE216_JALON01_SERVER/fast
 
 # Help Target
