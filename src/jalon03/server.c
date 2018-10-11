@@ -1,4 +1,6 @@
 #include "common.h"
+#include "list.h"
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -10,11 +12,6 @@
 #include <poll.h>
 
 #define MAX_CL 20
-
-struct client{
-  char nickname[BUFFER_SIZE];
-  int c_fd;
-};
 
 char * strlncpy(char *dest, const char *src, size_t n, int size) {
   size_t i;
@@ -31,17 +28,6 @@ int my_strlen(char s[]) {
   while(s[i]!='\0')
     ++i;
   return i;
-}
-
-void do_nick(char *buffer, struct client *client, int c_sock){
-  assert(client[c_sock].nickname);
-  //bzero(client[c_sock].nickname,BUFFER_SIZE);
-  //int m = my_strlen(client[c_sock].nickname); // pas besoinde ça
-  int k = my_strlen(buffer)-1;
-  memset(client[c_sock].nickname, 0, BUFFER_SIZE);
-  strlncpy(client[c_sock].nickname, buffer, 6, k);  //5 est une constante correspong a /nick
-  //memset(buffer, 0, BUFFER_SIZE);
-
 }
 
 /*
@@ -62,6 +48,10 @@ int do_socket(){
   if(fd == -1)
     error("ERROR creating socket");
   return fd;
+  int yes = 1;
+  // set socket option, to prevent "already in use" issue when rebooting the server right on
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+      error("ERROR setting socket options");
 }
 
 void init_serv_addr(int port, struct sockaddr_in * s_addr){
@@ -92,33 +82,69 @@ int get_available_fd_index(struct pollfd * fds){
   error("ERROR too many connected clients");
 }
 
+S_CMD get_command(char * buffer, int s_read){
 
-int command(char * buffer, struct client * client, int c_sock, struct pollfd * fds, int i,int s_read){
+  if((s_read == 0) || (strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6)) //s_read = 0 probably mean client has closed socket
+    return QUIT;
 
-    if( (strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6) || s_read==0){ //s_read = 0 probably mean client has closed socket
-      printf("> Client disconnected\n");
-      fds[i].fd=-1; //we want to ignore this fd in the future
-      close(c_sock);
-      return -1;
+  if(strncmp(buffer,"/nick ",6)==0 && strlen(buffer)>7)
+    return NICK;
+
+  if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5)
+    return WHO;
+
+  if(strncmp(buffer,"/whois ",7)==0 && strlen(buffer)>8)
+    return WHOIS;
+
+  return MSG;
+}
+
+int command(char * buffer, S_CMD cmd, struct list * clients, struct pollfd * fd){
+    char nick[BUFFER_SIZE];
+    memset(nick, 0, BUFFER_SIZE);
+    int c_sock = fd->fd;
+    int res;
+    int hasNick = has_nick(clients, nick, c_sock);
+    if(!hasNick && cmd!=NICK && cmd!=QUIT){ //Not allowed to talk until a nickname is chosen
+      writeline(c_sock, "Please use /nick <your_pseudo> to login.\n", BUFFER_SIZE);
+      return 0;
+    }
+    switch(cmd){
+      case MSG :
+        printf("> [%s] %s", nick, buffer);
+        writeline(c_sock, buffer, BUFFER_SIZE);
+        break;
+      case QUIT :
+        remove_client(&clients, c_sock);
+        close(c_sock);
+        fd->fd = -1; //to let the program know to ignore this structure in the future
+        printf("> [%s] disconnected\n", nick);
+        break;
+      case NICK :
+        if(hasNick){
+          printf("> [%s] Tried to change his nickname but one is already set.\n", nick);
+          writeline(c_sock, "You already have a nickname.\n", BUFFER_SIZE);
+          break;
+        }
+        else{
+          res = set_nick(clients, c_sock, buffer+6);  //the first 6 bytes are taken by the command
+          if(res==1){
+            printf("> Client can't change nick : nick %s already taken\n", nick);
+            writeline(c_sock, "Nickname is already taken. Please chose an other one.\n", BUFFER_SIZE);
+            break;
+          }
+          if(res==0){
+            printf("> [%s] Nickname set\n", nick);
+            writeline(c_sock, "Nickname set. You can now use the server !\n", BUFFER_SIZE);
+          }
+        }
     }
 
-    if( (strncmp(buffer,"/nick",5)!=0) && (strncmp(client[c_sock-4].nickname,"USER",4)==0) ){   // pas propre cette deuxieme condition je crois
-    writeline(c_sock, "Please use /nick <your_pseudo> to logon\n",BUFFER_SIZE);
-    printf("> [%s%d] try to comunicate but is not identified\n", client[c_sock-4].nickname,c_sock);
-    return -1;
-    }
-
-  if(strncmp(buffer,"/nick",5)==0 ){
-    do_nick(buffer, client, c_sock-4);                       // il faut isolé le nickname et remplir la structure client
-       // en gros ça ressemble à ça
-    writeline(c_sock, "Pseudo change, you can communicate\n",BUFFER_SIZE);
-   }
-
-
-  if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5){
+  /*if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5){
     writeline(c_sock,"> Client connected\n",BUFFER_SIZE);
+    int i;
     for (i=0;i<2;i++){
-      writeline(c_sock,client[i].nickname,BUFFER_SIZE);
+      writeline(c_sock,clients[i].nickname,BUFFER_SIZE);
       writeline(c_sock,"\n",BUFFER_SIZE);
     }
     return -1;
@@ -129,11 +155,11 @@ int command(char * buffer, struct client * client, int c_sock, struct pollfd * f
   }
 
   else{
-    printf("> [%s] : %s", client[c_sock-4].nickname, buffer);
+    printf("> [%s] : %s", clients[c_sock-4].nickname, buffer);
     //server response
     writeline(c_sock, buffer, BUFFER_SIZE);
   }
-  return 0;
+  return 0;*/
 }
 
 int main(int argc, char** argv)
@@ -154,7 +180,7 @@ int main(int argc, char** argv)
     //we bind on the tcp port specified
     do_bind(sock, s_addr);
 
-    //specify the socket to be a server socket and listen for at most 20 concurrent client (but only one use Jalon01)
+    //specify the socket to be a server socket
     listen(sock, MAX_CL);
     printf("> Waiting for connection : \n");
 
@@ -165,9 +191,10 @@ int main(int argc, char** argv)
     int c_addrlen;
     int c_sock;
     int s_read;
-
+    S_CMD s_cmd;
     struct pollfd fds[MAX_CL+2]; // = (struct pollfd *) malloc((MAX_CL+2)*sizeof(struct pollfd));
     //fds = memset(fds, 0, (MAX_CL+2)*sizeof(struct pollfd));
+    struct list * clients = NULL;
 
     fds[0].fd = 0;
     fds[0].events = POLLIN;
@@ -180,13 +207,6 @@ int main(int argc, char** argv)
       fds[i].fd = -1;
       fds[i].events = POLLIN;
     }
-
-    struct client client[20];
-
-    // pour une bocule whos
-    int m;
-    int n_client=2;
-    // c'est pas beau
 
     for (;;)
     {
@@ -210,9 +230,9 @@ int main(int argc, char** argv)
           c_addrlen = sizeof(*c_addr);
           c_sock = do_accept(sock, c_addr, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
+          add_client_to_list(&clients, c_sock);
           printf("> Connection accepted \n");
-          writeline(c_sock, "Welcome to the server.\nPlease use /nick <your_psuedo> to logon\n", BUFFER_SIZE);    // welcome message for the client
-          do_nick("/nick USERXX", client, c_sock-4);
+          writeline(c_sock, "Welcome to the server.\nPlease use /nick <your_pseudo> to login\n", BUFFER_SIZE);  // welcome message for the client
         }
 
         else{
@@ -221,7 +241,8 @@ int main(int argc, char** argv)
           fds[get_available_fd_index(fds)].fd = c_sock;
           writeline(c_sock, "Server cannot accept incoming connections anymore. Please try again later.\n", BUFFER_SIZE);
           printf("> Connection to a client denied, too many clients already connected\n");
-          fds[i].fd=-1;            //we want to ignore this fd next loops
+          fds[i].fd=-1; //we want to ignore this fd next loops
+          //no point in adding client to client list
           close(c_sock);
         }
       }
@@ -231,11 +252,8 @@ int main(int argc, char** argv)
           c_sock = fds[i].fd;
           //read what the client has to say
           s_read = readline(c_sock, buffer, BUFFER_SIZE);
-
-          // Plutôt que des conditions comme ça faudrait peut être mieux faire des appels à des fonctions qui font quelque chose ou pas
-          // en foction de buffer par exemple
-          // A MODIFIER
-          command(buffer,client,c_sock,fds,i,s_read);
+          s_cmd = get_command(buffer, s_read);
+          command(buffer, s_cmd, clients, fds+i);
         }
       }
 

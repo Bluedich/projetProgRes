@@ -1,11 +1,5 @@
 #include "common.h"
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-
 void error(const char *msg)
 {
     perror(msg);
