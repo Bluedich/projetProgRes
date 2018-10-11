@@ -44,6 +44,19 @@ void do_nick(char *buffer, struct client *client, int c_sock){   // buffer= nick
 
 }
 
+/*
+void do_whois(char *buffer, struct client *client, int c_sock){   // buffer= nicknae's users
+  assert(client[c_sock].nickname);
+  //bzero(client[c_sock].nickname,BUFFER_SIZE);
+  //int m = my_strlen(client[c_sock].nickname); // pas besoinde ça
+  int k = my_strlen(buffer)-1;
+  memset(client[c_sock].nickname, 0, BUFFER_SIZE);
+  strlncpy(client[c_sock].nickname, buffer, 6, k);  //6 est une constante correspong a /nick
+  //memset(buffer, 0, BUFFER_SIZE);
+
+}
+*/
+
 int do_socket(){
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if(fd == -1)
@@ -77,6 +90,50 @@ int get_available_fd_index(struct pollfd * fds){
   }
   return -1;
   error("ERROR too many connected clients");
+}
+
+
+int command(char * buffer, struct client * client, int c_sock, struct pollfd * fds, int i,int s_read){
+
+    if( (strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6) || s_read==0){ //s_read = 0 probably mean client has closed socket
+      printf("> Client disconnected\n");
+      fds[i].fd=-1; //we want to ignore this fd in the future
+      close(c_sock);
+      return -1;
+    }
+
+    if( (strncmp(buffer,"/nick",5)!=0) && (strncmp(client[c_sock-4].nickname,"USER",4)==0) ){   // pas propre cette deuxieme condition je crois
+    writeline(c_sock, "Please use /nick <your_pseudo> to logon\n",BUFFER_SIZE);
+    printf("> [%s%d] try to comunicate but is not identified\n", client[c_sock-4].nickname,c_sock);
+    return -1;
+    }
+
+  if(strncmp(buffer,"/nick",5)==0 ){
+    do_nick(buffer, client, c_sock-4);                       // il faut isolé le nickname et remplir la structure client
+       // en gros ça ressemble à ça
+    writeline(c_sock, "Pseudo change, you can communicate\n",BUFFER_SIZE);
+   }
+
+
+  if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5){
+    writeline(c_sock,"> Client connected\n",BUFFER_SIZE);
+    for (i=0;i<2;i++){
+      writeline(c_sock,client[i].nickname,BUFFER_SIZE);
+      writeline(c_sock,"\n",BUFFER_SIZE);
+    }
+    return -1;
+  }
+
+  if(strncmp(buffer,"/whois",6)==0){
+
+  }
+
+  else{
+    printf("> [%s] : %s", client[c_sock-4].nickname, buffer);
+    //server response
+    writeline(c_sock, buffer, BUFFER_SIZE);
+  }
+  return 0;
 }
 
 int main(int argc, char** argv)
@@ -178,44 +235,9 @@ int main(int argc, char** argv)
           // Plutôt que des conditions comme ça faudrait peut être mieux faire des appels à des fonctions qui font quelque chose ou pas
           // en foction de buffer par exemple
           // A MODIFIER
-          if( (strncmp(buffer,"/nick",5)!=0) && (strncmp(client[c_sock-4].nickname,"USER",4)==0) ){   // pas propre cette deuxieme condition je crois
-            writeline(c_sock, "Please use /nick <your_psuedo> to logon\n",BUFFER_SIZE);
-            printf("> [%s] try to comunicate but is not identified\n", client[c_sock-4].nickname,c_sock);
-            break;
-            }
 
-          if(strncmp(buffer,"/nick",5)==0 ){
-            do_nick(buffer, client, c_sock-4);                       // il faut isolé le nickname et remplir la structure client
-               // en gros ça ressemble à ça
-           }
+          command(buffer,client,c_sock,fds,i,s_read);
 
-          if(strncmp(buffer,"/quit",5)==0 || s_read==0){ //s_read = 0 probably mean client has closed socket
-            printf("> Client disconnected\n");
-            fds[i].fd=-1; //we want to ignore this fd in the future
-            close(c_sock);
-            break;
-          }
-          if(strncmp(buffer,"/whos",5)==0){
-            printf("> Client disconnected\n");
-            writeline(c_sock,"> Client connected\n",BUFFER_SIZE);
-            for (i=0;i<2;i++){
-              /*
-              memset(buffer, 0, BUFFER_SIZE);
-              strcat(buffer,"Il y a");
-              strcat(buffer,client[i].nickname);
-              strcat(buffer,"de connecté");
-              writeline(c_sock,buffer,BUFFER_SIZE);
-              */
-              writeline(c_sock,client[i].nickname,BUFFER_SIZE);
-              writeline(c_sock,"\n",BUFFER_SIZE);
-            }
-            break;
-          }
-          else{
-            printf("> [%s] : %s", client[c_sock-4].nickname, buffer);
-            //server response
-            writeline(c_sock, buffer, BUFFER_SIZE);
-          }
         }
       }
 
