@@ -13,7 +13,7 @@
 
 struct client{
   char nickname[BUFFER_SIZE];
-  int c_addr;
+  int c_fd;
 };
 
 char * strlncpy(char *dest, const char *src, size_t n, int size) {
@@ -33,7 +33,7 @@ int my_strlen(char s[]) {
   return i;
 }
 
-void do_nick(char *buffer, struct client *client, int c_sock){   // buffer= nicknae's users
+void do_nick(char *buffer, struct client *client, int c_sock){   
   assert(client[c_sock].nickname);
   //bzero(client[c_sock].nickname,BUFFER_SIZE);
   //int m = my_strlen(client[c_sock].nickname); // pas besoinde ça
@@ -179,7 +179,7 @@ int main(int argc, char** argv)
           // en foction de buffer par exemple
           // A MODIFIER
           if( (strncmp(buffer,"/nick",5)!=0) && (strncmp(client[c_sock-4].nickname,"USER",4)==0) ){   // pas propre cette deuxieme condition je crois
-            writeline(c_sock, "Please use /nick <your_psuedo> to logon\n",BUFFER_SIZE);
+            writeline(c_sock, "Please use /nick <your_pseudo> to login\n",BUFFER_SIZE);
             printf("> [%s] try to comunicate but is not identified\n", client[c_sock-4].nickname,c_sock);
             break;
             }
