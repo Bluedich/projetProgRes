@@ -25,9 +25,19 @@ int add_client_to_list(struct list ** clients, int fd){
   *clients=new_start;
 }
 
+void format_nick(char * buffer){ //internal function to make sur nickname is formatted properly (mainly to remove trailing returnline)
+  int i=0;
+  while(i<BUFFER_SIZE-1 && buffer[i]!='\n'){
+    i++;
+  }
+  i--;
+  buffer[i]='\0';
+}
+
 int set_nick(struct list * clients, int fd, char * nick){
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
+  format_nick(nick);
   if(get_client_by_nick(clients, &client, nick)==0){
     return 1;
   }
