@@ -11,6 +11,40 @@ struct list{
   struct list * next;
 };
 
+int get_client_by_nick(struct list * clients, struct client ** client, char * nick){ //internal function
+  struct list * current = clients;
+  if(current == NULL)
+    return -1;
+
+  while (current != NULL){
+    if(current->client->hasNick && strcmp(current->client->nickname, nick)==0){
+      *client = current->client;
+      return 0;
+    }
+    //sinon on parcour la liste
+    current = current->next;
+  }
+  return -1; // il existe pas
+}
+
+int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //internal function
+  struct list * current = clients;
+  if(current == NULL)
+    return -1;
+
+  while (current != NULL){
+    if(current->client->fd==fd){
+      *client = current->client;
+      return 0;
+    }
+    //sinon on parcour la liste
+    current = current->next;
+  }
+
+  return -1; // il n'existe pas
+}
+
+
 int add_client_to_list(struct list ** clients, int fd){
   assert(clients);
   struct list * new_start = (struct list *) malloc(sizeof(struct list));
@@ -93,50 +127,18 @@ int remove_client(struct list ** clients, int fd){
   return -1; // il existe pas
 }
 
-int get_client_by_nick(struct list * clients, struct client ** client, char * nick){ //internal function
-  struct list * current = clients;
-  if(current == NULL)
-    return -1;
-
-  while (current != NULL){
-    if(current->client->hasNick && strcmp(current->client->nickname, nick)==0){
-      *client = current->client;
-      return 0;
-    }
-    //sinon on parcour la liste
-    current = current->next;
-  }
-  return -1; // il existe pas
-}
-
-int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //internal function
-  struct list * current = clients;
-  if(current == NULL)
-    return -1;
-
-  while (current != NULL){
-    if(current->client->fd==fd){
-      *client = current->client;
-      return 0;
-    }
-    //sinon on parcour la liste
-    current = current->next;
-  }
-
-  return -1; // il n'existe pas
-}
-
-/*
-int main(int argc, char ** agrv){
+/*int main(int argc, char ** agrv){
   struct list * clients = NULL;
   char buffer[BUFFER_SIZE];
   add_client_to_list(&clients, -123543);
-  add_client_to_list(&clients, -1243);
-  add_client_to_list(&clients, -543);
-  add_client_to_list(&clients, 235);
+  //add_client_to_list(&clients, -1243);
+  //add_client_to_list(&clients, -543);
+  //add_client_to_list(&clients, 235);
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
 
-  change_nick(clients, 235, "Ta mère");
-  change_nick(clients, -543, "Ta mère");
+  set_nick(clients, -123543, "Ta mère");
+  remove_client(&clients, -123543);
+  add_client_to_list(&clients, 4);
+  set_nick(clients, 4, "Ta mère");
 }*/

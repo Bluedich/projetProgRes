@@ -55,9 +55,9 @@ int do_socket(){
 }
 
 void init_serv_addr(int port, struct sockaddr_in * s_addr){
-  (*s_addr).sin_family = AF_INET;
-  (*s_addr).sin_port = htons(port);
-  (*s_addr).sin_addr.s_addr = INADDR_ANY;
+  s_addr->sin_family = AF_INET;
+  s_addr->sin_port = htons(port);
+  s_addr->sin_addr.s_addr = INADDR_ANY;
 }
 
 void do_bind(int sock, struct sockaddr_in * s_addr){
@@ -172,13 +172,15 @@ int main(int argc, char** argv)
     //create the socket, check for validity!
     int sock = do_socket(sock);
 
-    //init the serv_add structure
-    struct  sockaddr_in * s_addr;
-    init_serv_addr(atoi(argv[1]), s_addr);
+    //init the serv_addr structure
+    struct sockaddr_in s_addr;
+    memset(&s_addr, 0, sizeof(s_addr));
+    init_serv_addr(atoi(argv[1]), &s_addr);
 
     //perform the binding
     //we bind on the tcp port specified
-    do_bind(sock, s_addr);
+
+    do_bind(sock, &s_addr);
 
     //specify the socket to be a server socket
     listen(sock, MAX_CL);
@@ -258,7 +260,7 @@ int main(int argc, char** argv)
       }
 
     //clean up client socket
-   }
+  }
 
     //clean up server socket
     free(c_addr);
