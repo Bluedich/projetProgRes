@@ -14,36 +14,6 @@
 
 #define MAX_CL 20
 
-char * strlncpy(char *dest, const char *src, size_t n, int size) {
-  size_t i;
-  for (i = n; i < size && src[i] != '\0'; i++)
-    dest[i-n] = src[i];
-  for ( ; i < size; i++)
-    dest[i-n] = '\0';
-  return dest;
-}
-
-int my_strlen(char s[]) {
-  int i;
-  i=0;
-  while(s[i]!='\0')
-    ++i;
-  return i;
-}
-
-/*
-void do_whois(char *buffer, struct client *client, int c_sock){   // buffer= nicknae's users
-  assert(client[c_sock].nickname);
-  //bzero(client[c_sock].nickname,BUFFER_SIZE);
-  //int m = my_strlen(client[c_sock].nickname); // pas besoinde ça
-  int k = my_strlen(buffer)-1;
-  memset(client[c_sock].nickname, 0, BUFFER_SIZE);
-  strlncpy(client[c_sock].nickname, buffer, 6, k);  //6 est une constante correspong a /nick
-  //memset(buffer, 0, BUFFER_SIZE);
-
-}
-*/
-
 int do_socket(){
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if(fd == -1)
