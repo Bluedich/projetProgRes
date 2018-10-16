@@ -84,7 +84,7 @@ int get_available_fd_index(struct pollfd * fds){
 
 S_CMD get_command(char * buffer, int s_read){
 
-  if((s_read == 0) || (strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6)) //s_read = 0 probably mean client has closed socket
+  if((s_read == 0) || (strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6)) //s_read = 0 probably means client has closed socket
     return QUIT;
 
   if(strncmp(buffer,"/nick ",6)==0 && strlen(buffer)>7)
@@ -99,12 +99,13 @@ S_CMD get_command(char * buffer, int s_read){
   return MSG;
 }
 
-int command(char * buffer, S_CMD cmd, struct list * clients, struct pollfd * fd){
+int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd){
+    print_list(*clients);
     char nick[BUFFER_SIZE];
     memset(nick, 0, BUFFER_SIZE);
     int c_sock = fd->fd;
     int res;
-    int hasNick = has_nick(clients, nick, c_sock);
+    int hasNick = has_nick(*clients, nick, c_sock);
     if(!hasNick && cmd!=NICK && cmd!=QUIT){ //Not allowed to talk until a nickname is chosen
       writeline(c_sock, "Please use /nick <your_pseudo> to login.\n", BUFFER_SIZE);
       return 0;
@@ -115,7 +116,8 @@ int command(char * buffer, S_CMD cmd, struct list * clients, struct pollfd * fd)
         writeline(c_sock, buffer, BUFFER_SIZE);
         break;
       case QUIT :
-        remove_client(&clients, c_sock);
+        remove_client(clients, c_sock);
+        print_list(*clients);
         close(c_sock);
         fd->fd = -1; //to let the program know to ignore this structure in the future
         printf("> [%s] disconnected\n", nick);
@@ -127,9 +129,9 @@ int command(char * buffer, S_CMD cmd, struct list * clients, struct pollfd * fd)
           break;
         }
         else{
-          res = set_nick(clients, c_sock, buffer+6);  //the first 6 bytes are taken by the command
+          res = set_nick(*clients, c_sock, buffer+6);  //the first 6 bytes are taken by the command
           if(res==1){
-            printf("> Client can't change nick : nick %s already taken\n", nick);
+            printf("> Client can't change nick : nick %s already taken\n", buffer+6);
             writeline(c_sock, "Nickname is already taken. Please chose an other one.\n", BUFFER_SIZE);
             break;
           }
@@ -233,6 +235,7 @@ int main(int argc, char** argv)
           c_sock = do_accept(sock, c_addr, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
           add_client_to_list(&clients, c_sock);
+          print_list(clients);
           printf("> Connection accepted \n");
           writeline(c_sock, "Welcome to the server.\nPlease use /nick <your_pseudo> to login\n", BUFFER_SIZE);  // welcome message for the client
         }
@@ -255,7 +258,7 @@ int main(int argc, char** argv)
           //read what the client has to say
           s_read = readline(c_sock, buffer, BUFFER_SIZE);
           s_cmd = get_command(buffer, s_read);
-          command(buffer, s_cmd, clients, fds+i);
+          command(buffer, s_cmd, &clients, fds+i);
         }
       }
 

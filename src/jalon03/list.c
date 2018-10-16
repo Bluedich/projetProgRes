@@ -64,8 +64,16 @@ void format_nick(char * buffer){ //internal function to make sur nickname is for
   while(i<BUFFER_SIZE-1 && buffer[i]!='\n'){
     i++;
   }
-  i--;
   buffer[i]='\0';
+}
+
+void print_list(struct list * clients){
+  struct list * current = clients;
+  while(current!=NULL){
+    printf("-nick:%s fd:%d\n", current->client->nickname, current->client->fd);
+    current = current->next;
+  }
+  printf("End of list\n");
 }
 
 int set_nick(struct list * clients, int fd, char * nick){
@@ -99,9 +107,10 @@ int has_nick(struct list * clients, char * buffer, int fd){ //returns nick in "b
 
 int remove_client(struct list ** clients, int fd){
   struct list * before = *clients;
-  if(before == NULL)
+  if(before == NULL){
+    printf("ERROR trying to remove : list empty\n");
     return -1;
-
+  }
   if(before->client->fd == fd){
     *clients = before->next;
     return 0;
@@ -127,18 +136,29 @@ int remove_client(struct list ** clients, int fd){
   return -1; // il existe pas
 }
 
-/*int main(int argc, char ** agrv){
+/*int main(int argc, char ** agrv){ //for testing purposes
   struct list * clients = NULL;
   char buffer[BUFFER_SIZE];
-  add_client_to_list(&clients, -123543);
-  //add_client_to_list(&clients, -1243);
-  //add_client_to_list(&clients, -543);
-  //add_client_to_list(&clients, 235);
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
-
+  //add_client_to_list(&clients, -1243);
+  //print_list(clients);
+  add_client_to_list(&clients, -123543);
+  print_list(clients);
   set_nick(clients, -123543, "Ta mère");
+  print_list(clients);
   remove_client(&clients, -123543);
-  add_client_to_list(&clients, 4);
-  set_nick(clients, 4, "Ta mère");
+  print_list(clients);
+  add_client_to_list(&clients, -543);
+  print_list(clients);
+  /*add_client_to_list(&clients, 235);
+  int res;
+  res = get_client_by_nick(clients, &client, "Ta mère");
+  printf("%d\n", res);
+  print_list(clients);
+  res = get_client_by_nick(clients, &client, "Ta mère");
+  print_list(clients);
+  printf("%d\n", res);
+  //add_client_to_list(&clients, 4);
+  //set_nick(clients, 4, "Ta mère");
 }*/

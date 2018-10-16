@@ -15,4 +15,7 @@ int has_nick(struct list * clients, char * buffer, int fd);
 //removes corresponding client from linked list
 int remove_client(struct list ** clients, int fd);
 
+//print list of client nicknames (for testing and for use in who command)
+void print_list(struct list * clients);
+
 #endif
