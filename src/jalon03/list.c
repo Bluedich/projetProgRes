@@ -1,9 +1,13 @@
 #include "common.h"
+#include <time.h>
 
 struct client{
-  char nickname[BUFFER_SIZE];
+  char nickname[MAX_NICK_SIZE];
+  char ip_addr[17];
+  int port_nb;
   int hasNick;
   int fd;
+  char con_date[512];
 };
 
 struct list{
@@ -11,7 +15,7 @@ struct list{
   struct list * next;
 };
 
-int get_client_by_nick(struct list * clients, struct client ** client, char * nick){ //internal function
+int get_client_by_nick(struct list * clients, struct client ** client, char nick[]){ //internal function
   struct list * current = clients;
   if(current == NULL)
     return -1;
@@ -25,6 +29,14 @@ int get_client_by_nick(struct list * clients, struct client ** client, char * ni
     current = current->next;
   }
   return -1; // il existe pas
+}
+
+void format_nick(char buffer[]){ //internal function to make sur nickname is formatted properly (mainly to remove trailing returnline)
+  int i=0;
+  while(i<BUFFER_SIZE-1 && buffer[i]!='\n'){
+    i++;
+  }
+  buffer[i]='\0';
 }
 
 int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //internal function
@@ -44,8 +56,22 @@ int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //
   return -1; // il n'existe pas
 }
 
+int exists(struct list * clients, char nick[]){
+  struct list * current = clients;
+  if(current == NULL)
+    return 0;
 
-int add_client_to_list(struct list ** clients, int fd){
+  while (current != NULL){
+    format_nick(nick);
+    if(current->client->hasNick && strcmp(current->client->nickname, nick)==0){
+      return 1;
+    }
+    current = current->next;
+  }
+  return 0; // il existe pas
+}
+
+int add_client_to_list(struct list ** clients, int fd, char ip[], int port){
   assert(clients);
   struct list * new_start = (struct list *) malloc(sizeof(struct list));
   struct client * client = (struct client *) malloc(sizeof(struct client));
@@ -53,30 +79,56 @@ int add_client_to_list(struct list ** clients, int fd){
   assert(new_start);
   client->fd = fd;
   client->hasNick = 0;
+  strcpy(client->ip_addr, ip);
+  client->port_nb = port;
   strcpy(client->nickname, "Guest");
+  //get time info
+  time_t rawtime;
+  time(&rawtime);
+  strcpy(client->con_date, asctime(localtime(&rawtime)));
+
   new_start->client = client;
   new_start->next = *clients;
   *clients=new_start;
 }
 
-void format_nick(char * buffer){ //internal function to make sur nickname is formatted properly (mainly to remove trailing returnline)
-  int i=0;
-  while(i<BUFFER_SIZE-1 && buffer[i]!='\n'){
-    i++;
-  }
-  buffer[i]='\0';
-}
-
-void print_list(struct list * clients){
+int print_list(struct list * clients){
   struct list * current = clients;
   while(current!=NULL){
     printf("-nick:%s fd:%d\n", current->client->nickname, current->client->fd);
     current = current->next;
   }
   printf("End of list\n");
+  return 0;
 }
 
-int set_nick(struct list * clients, int fd, char * nick){
+int get_online_users(struct list * clients, char buffer[]){
+  struct list * current = clients;
+  memset(buffer, 0, BUFFER_SIZE);
+  char temp[BUFFER_SIZE];
+  strcat(buffer, "Online users :\n");
+  while(current!=NULL){
+    memset(temp, 0, BUFFER_SIZE);
+    sprintf(temp, "               - %s\n", current->client->nickname);
+    strcat(buffer, temp);
+    current = current->next;
+  }
+  strcat(buffer, " Use /whois <nickname> to get more info on a user\n");
+  return 0;
+}
+
+int get_info(struct list * clients, char buffer[], char nick[]){
+  struct client * client;
+  char nickname[BUFFER_SIZE];
+  strcpy(nickname, nick);
+  format_nick(nickname);
+  get_client_by_nick(clients, &client, nickname);
+  memset(buffer, 0, BUFFER_SIZE);
+  sprintf(buffer, "%s connected since %s with IP address %s and port number %d\n", client->nickname, client->con_date, client->ip_addr, client->port_nb);
+  return 0;
+}
+
+int set_nick(struct list * clients, int fd, char nick[]){
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
   format_nick(nick);
@@ -93,7 +145,7 @@ int set_nick(struct list * clients, int fd, char * nick){
   return 0;
 }
 
-int has_nick(struct list * clients, char * buffer, int fd){ //returns nick in "buffer", returns -1 if error, 0 if false, 1 if true
+int has_nick(struct list * clients, char buffer[], int fd){ //returns nick in "buffer", returns -1 if error, 0 if false, 1 if true
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
   if(get_client_by_fd(clients, &client, fd) == -1){

@@ -8,6 +8,7 @@
 #include <assert.h>
 
 #define BUFFER_SIZE 1024
+#define MAX_NICK_SIZE 64
 
 typedef enum {NONE, RECONNECT, CLOSE} CMD;
 

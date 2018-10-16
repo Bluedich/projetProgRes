@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <poll.h>
+#include <arpa/inet.h>
 
 #define MAX_CL 20
 
@@ -100,7 +101,6 @@ S_CMD get_command(char * buffer, int s_read){
 }
 
 int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd){
-    print_list(*clients);
     char nick[BUFFER_SIZE];
     memset(nick, 0, BUFFER_SIZE);
     int c_sock = fd->fd;
@@ -110,35 +110,55 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
       writeline(c_sock, "Please use /nick <your_pseudo> to login.\n", BUFFER_SIZE);
       return 0;
     }
+
     switch(cmd){
       case MSG :
         printf("> [%s] %s", nick, buffer);
         writeline(c_sock, buffer, BUFFER_SIZE);
         break;
+
       case QUIT :
         remove_client(clients, c_sock);
-        print_list(*clients);
         close(c_sock);
         fd->fd = -1; //to let the program know to ignore this structure in the future
         printf("> [%s] disconnected\n", nick);
         break;
+
       case NICK :
         if(hasNick){
           printf("> [%s] Tried to change his nickname but one is already set.\n", nick);
           writeline(c_sock, "You already have a nickname.\n", BUFFER_SIZE);
-          break;
         }
         else{
           res = set_nick(*clients, c_sock, buffer+6);  //the first 6 bytes are taken by the command
           if(res==1){
-            printf("> Client can't change nick : nick %s already taken\n", buffer+6);
+            printf("> Client can't change nick : nick %s already taken.\n", buffer+6);
             writeline(c_sock, "Nickname is already taken. Please chose an other one.\n", BUFFER_SIZE);
-            break;
           }
-          if(res==0){
-            printf("> [%s] Nickname set\n", nick);
+          else if(res==0){
+            printf("> [%s] Nickname set\n", buffer+6);
             writeline(c_sock, "Nickname set. You can now use the server !\n", BUFFER_SIZE);
           }
+        }
+        break;
+
+      case WHO :
+        printf("> [%s] Requested to see online users\n", nick);
+        get_online_users(*clients, buffer);
+        writeline(c_sock, buffer, BUFFER_SIZE);
+        break;
+
+      case WHOIS :
+        //check if user exists
+        printf("> [%s] ", nick);
+        if(exists(*clients, buffer+7)){
+          printf("Requested info on %s.\n", buffer+7);
+          get_info(*clients, buffer, buffer+7);
+          writeline(c_sock, buffer, BUFFER_SIZE);
+        }
+        else{
+          printf("Requested info on non-existent user %s.\n", buffer+7);
+          writeline(c_sock, "This user doesn't exist.\n", BUFFER_SIZE);
         }
     }
 
@@ -232,12 +252,12 @@ int main(int argc, char** argv)
         //accept connection from client
         if(get_available_fd_index(fds) != -1){
           c_addrlen = sizeof(*c_addr);
+          memset(c_addr, 0, sizeof(*c_addr));
           c_sock = do_accept(sock, c_addr, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
-          add_client_to_list(&clients, c_sock);
-          print_list(clients);
+          add_client_to_list(&clients, c_sock, inet_ntoa( ((struct sockaddr_in * ) c_addr)->sin_addr)/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
           printf("> Connection accepted \n");
-          writeline(c_sock, "Welcome to the server.\nPlease use /nick <your_pseudo> to login\n", BUFFER_SIZE);  // welcome message for the client
+          writeline(c_sock, "Welcome to the server. Please use /nick <your_pseudo> to login\n", BUFFER_SIZE);  // welcome message for the client
         }
 
         else{
