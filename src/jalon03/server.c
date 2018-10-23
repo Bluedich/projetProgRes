@@ -95,11 +95,6 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         break;
 
       case NICK :
-        if(hasNick){
-          printf("> [%s] Tried to change his nickname but one is already set.\n", nick);
-          writeline(c_sock, "You already have a nickname.\n", BUFFER_SIZE);
-        }
-        else{
           res = set_nick(*clients, c_sock, buffer+6);  //the first 6 bytes are taken by the command
           if(res==1){
             printf("> Client can't change nick : nick %s already taken.\n", buffer+6);
@@ -109,7 +104,10 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
             printf("> [%s] Nickname set\n", buffer+6);
             writeline(c_sock, "Nickname set. You can now use the server !\n", BUFFER_SIZE);
           }
-        }
+          else if(res==2){
+            printf("> [%s] Tried to use nickname beginning with 'Guest'\n", buffer+6);
+            writeline(c_sock, "Can't use nickname beginning with 'Guest'\n", BUFFER_SIZE);
+          }
         break;
 
       case WHO :

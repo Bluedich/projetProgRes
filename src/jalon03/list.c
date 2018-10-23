@@ -104,14 +104,28 @@ int print_list(struct list * clients){
 
 int get_online_users(struct list * clients, char buffer[]){
   struct list * current = clients;
+  int nb_guest=0;
   memset(buffer, 0, BUFFER_SIZE);
   char temp[BUFFER_SIZE];
   strcat(buffer, "Online users :\n");
   while(current!=NULL){
     memset(temp, 0, BUFFER_SIZE);
-    sprintf(temp, "               - %s\n", current->client->nickname);
-    strcat(buffer, temp);
+    if ( current->client->hasNick){
+        sprintf(temp, "               - %s\n", current->client->nickname);
+        strcat(buffer, temp);
+    }
+    else{
+      nb_guest++;
+    }
     current = current->next;
+  }
+  if (nb_guest>1){
+      sprintf(temp, "               ... and %d guests\n", nb_guest);
+      strcat(buffer, temp);
+  }
+  else if (nb_guest==1){
+    sprintf(temp, "                 ... and 1 guest)\n", nb_guest);
+    strcat(buffer, temp);
   }
   strcat(buffer, " Use /whois <nickname> to get more info on a user\n");
   return 0;
@@ -132,6 +146,8 @@ int set_nick(struct list * clients, int fd, char nick[]){
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
   format_nick(nick);
+  if (strncmp("Guest", nick,5) == 0)
+    return 2;
   if(get_client_by_nick(clients, &client, nick)==0){
     return 1;
   }
