@@ -46,6 +46,9 @@ int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //
 
   while (current != NULL){
     if(current->client->fd==fd){
+      if (client==NULL){
+        return 0;
+      }
       *client = current->client;
       return 0;
     }
@@ -58,11 +61,12 @@ int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //
 
 int get_fd_client_by_name(struct list *clients, char nick[]){
   struct list * current = clients;
+  int len_nick=3;// La c'est absurde et temporaire, mais il faudrait le len du nick du client Pour cela je pense qu'il faut obliger le client à ne pas avoir d'espace, et après coder un fonction asser simple qui recupère la longeurdu pseudo ou autre
   if(current == NULL)
     return -1;
 
   while (current != NULL){
-    if(current->client->hasNick && strncmp(current->client->nickname, nick,3)==0){ // il faudrait connaître la longueur du nom
+    if(current->client->hasNick && strncmp(current->client->nickname, nick,len_nick)==0){ // il faudrait connaître la longueur du nom
       return current->client->fd;
     }
     //sinon on parcour la liste
@@ -70,6 +74,38 @@ int get_fd_client_by_name(struct list *clients, char nick[]){
   }
   return -1; // il existe pas
 }
+
+int get_fd_client(struct list *clients, int fd[]){
+  struct list * current = clients;
+  int i =0;
+  if(current == NULL)
+    return i; //renvoi le nombre de client
+
+  while (current != NULL){
+    fd[i] = current->client->fd;
+    i++;
+    // on parcour la liste
+    current = current->next;
+  }
+
+  return i; // renvoie le nombre de client
+}
+
+int nb_client_in_list(struct list *clients){
+  struct list * current = clients;
+  int i =0;
+  if(current == NULL)
+    return -1; // il n'y pas pas de client
+
+  while (current != NULL){
+    i++;
+    // on parcour la liste
+    current = current->next;
+  }
+  return i; // il existe pas
+}
+
+
 
 int exists(struct list * clients, char nick[]){
   struct list * current = clients;
@@ -139,7 +175,7 @@ int get_online_users(struct list * clients, char buffer[]){
       strcat(buffer, temp);
   }
   else if (nb_guest==1){
-    sprintf(temp, "                 ... and 1 guest)\n", nb_guest);
+    sprintf(temp, "                 ... and 1 guest)\n");
     strcat(buffer, temp);
   }
   strcat(buffer, " Use /whois <nickname> to get more info on a user\n");

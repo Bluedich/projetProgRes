@@ -98,16 +98,18 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     int c_sock = fd->fd;
     int res;
     int w_sock; // sock du client à qui on veut whisper
+    int nb_client; // nombre de client dans un groupe(sera claculer arpès)
+    int sock_tab[20];//array wich will contain all the sock of the clients in a group
     int hasNick = has_nick(*clients, nick, c_sock);
     if(!hasNick && cmd!=NICK && cmd!=QUIT){ //Not allowed to talk until a nickname is chosen
-      writeline(c_sock, "Please use /nick <your_pseudo> to login.\n", BUFFER_SIZE);
+      writeline(c_sock,c_sock, "Please use /nick <your_pseudo> to login.\n", BUFFER_SIZE);
       return 0;
     }
 
     switch(cmd){
       case MSG :  // command plus ou moins obsolète
         printf("> [%s] %s", nick, buffer);
-        writeline(c_sock, buffer, BUFFER_SIZE);
+        writeline(c_sock,c_sock, buffer, BUFFER_SIZE);
         break;
 
       case QUIT :
@@ -118,72 +120,92 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         break;
 
       case LEAVE :
+        format_nick(buffer);
         res = remove_client_in_group(groups,c_sock,buffer+6); // hummm ça marche pas... Il me dit que le channel exist pas
         if (res==0){
-          writeline(c_sock, "you have quit", BUFFER_SIZE);// oui c'est immonde
-          writeline(c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock,c_sock, "you have quit ", BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock,c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock,c_sock, "\n", BUFFER_SIZE);// oui c'est immonde
           break;
         }
         if (res==10){
-          writeline(c_sock, "you have quit", BUFFER_SIZE);// oui c'est immonde
-          writeline(c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock,c_sock, "you have quit the channel ", BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock,c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
           remove_group(groups,buffer+6);
-          writeline(c_sock, "And", BUFFER_SIZE);// oui c'est immonde
-          writeline(c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
-          writeline(c_sock, "is destroyed", BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock,c_sock, "And ", BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock,c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock,c_sock, " is destroyed\n", BUFFER_SIZE);// oui c'est immonde
           printf("> Channel %s destroyed\n", buffer+6);
           break;
         }
-        writeline(c_sock, "You are not in channel", BUFFER_SIZE);  // oui c'est immonde
-        writeline(c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
+        writeline(c_sock,c_sock, "You are not in channel ", BUFFER_SIZE);  // oui c'est immonde
+        writeline(c_sock,c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
         break;
 
       case CREATE :
+        format_nick(buffer);
         if (create_group(groups, buffer+8)==0){// y'a un problème d'argument pour le buffer, y'a un \n qui fait chier
-          writeline(c_sock, "You have create channel", BUFFER_SIZE);  // oui c'est immonde mais c'est pas problématique alors calm down
-          writeline(c_sock, buffer+8, BUFFER_SIZE);
-          writeline(c_sock, "\n", BUFFER_SIZE);
+          writeline(c_sock,c_sock, "You have create the channel ", BUFFER_SIZE);  // oui c'est immonde mais c'est pas problématique alors calm down
+          writeline(c_sock,c_sock, buffer+8, BUFFER_SIZE);
+          writeline(c_sock,c_sock, "\n", BUFFER_SIZE);
           printf("> Channel %s create\n", buffer+8);
           break;
         }
-        writeline(c_sock, "channel ", BUFFER_SIZE);  // oui c'est immonde
-        writeline(c_sock, buffer+8, BUFFER_SIZE);
-        writeline(c_sock, "Already exist", BUFFER_SIZE);
+        writeline(c_sock,c_sock, "channel ", BUFFER_SIZE);  // oui c'est immonde
+        writeline(c_sock,c_sock, buffer+8, BUFFER_SIZE);
+        writeline(c_sock,c_sock,"Already exist", BUFFER_SIZE);
         printf("> Channel %s already exist\n", buffer+8);
         break;
 
       case MSGW :
+        format_nick(buffer);  // problème pour obtenir uniquement le pseudo sans le message
         w_sock = get_fd_client_by_name(*clients,buffer +5); // new function in list.c
         if (w_sock == -1){
-          writeline(c_sock, "This user does not exist, use /who to see all the user connected", BUFFER_SIZE);
+          writeline(c_sock,c_sock, "This user does not exist, use /who to see all the user connected\n", BUFFER_SIZE);
           break;
         }
-        writeline(w_sock, buffer, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
+        writeline(w_sock,c_sock, buffer, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
         // quelque probleme encore
         break;
 
       case MSGALL :
-        w_sock = get_fd_client_by_name(*clients,buffer +5); // la moi je crérai une fonction qui rempli un tableau d'entier avec tous les fd des clients
-        if (w_sock == -1){
-          writeline(c_sock, "This user does not exist, use /who to see all the user connected\n", BUFFER_SIZE);
+        nb_client=nb_client_in_list(*clients);  // quasiment inutile si la ligne d'en dessous marche pas
+        memset(sock_tab,0,20); // ne marche pas, dommage ça aurait été "propre" à mon gout
+        res = get_fd_client(*clients,sock_tab); // la moi je crérai une fonction qui rempli un tableau d'entier avec tous les fd des clients
+        res=2;
+        if (res == -1){// ça n'arrivera plus ou moins jamais
+          writeline(c_sock,c_sock, "There none client connect to the server\n", BUFFER_SIZE);
           break;
         }
-        writeline(w_sock, buffer, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
-        // quelque probleme encore
+        for (res=0;res<nb_client;res++){// utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
+          if (sock_tab[res]!=c_sock){// ne l'affiche pas à l'expéditeur
+            writeline(sock_tab[res], c_sock, buffer+8, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
+          }
+
+        }
+        // quelque probleme encore, du genre l'envoie 2 fois sur le terminal pour un raison asser obscur
         break;
 
       case JOIN :
+        format_nick(buffer);
         get_client_by_fd( *clients, &client, c_sock);
         res = add_client_in_group( groups,  client, buffer +6);
 
         if (res == -1){
-          writeline(c_sock, "The channel", BUFFER_SIZE);
-          writeline(c_sock, buffer+6, BUFFER_SIZE);
-          writeline(c_sock, " does not exsit\n", BUFFER_SIZE);
+          writeline(c_sock,c_sock, "The channel", BUFFER_SIZE);
+          writeline(c_sock,c_sock, buffer+6, BUFFER_SIZE);
+          writeline(c_sock,c_sock, " does not exsit\n", BUFFER_SIZE);
           break;
         }
-        writeline(c_sock, "You have joined the channel", BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
-        writeline(c_sock, buffer+6, BUFFER_SIZE);
+        if (res == 1){
+          writeline(c_sock,c_sock, "You are already in channel", BUFFER_SIZE);
+          writeline(c_sock,c_sock, buffer+6, BUFFER_SIZE);
+          writeline(c_sock,c_sock, " \n", BUFFER_SIZE);
+          break;
+        }
+        writeline(c_sock,c_sock, "You have joined the channel", BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
+        writeline(c_sock,c_sock, buffer+6, BUFFER_SIZE);
+        writeline(c_sock,c_sock, " \n", BUFFER_SIZE);
         // quelque probleme encore
         break;
 
@@ -191,35 +213,36 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           res = set_nick(*clients, c_sock, buffer+6);  //the first 6 bytes are taken by the command (c'est pas plutot 'ignore' que taken)
           if(res==1){
             printf("> Client can't change nick : nick %s already taken.\n", buffer+6);
-            writeline(c_sock, "Nickname is already taken. Please chose an other one.\n", BUFFER_SIZE);
+            writeline(c_sock,c_sock, "Nickname is already taken. Please chose an other one.\n", BUFFER_SIZE);
           }
           else if(res==0){
             printf("> [%s] Nickname set\n", buffer+6);
-            writeline(c_sock, "Nickname set. You can now use the server !\n", BUFFER_SIZE);
+            writeline(c_sock,c_sock, "Nickname set. You can now use the server !\n", BUFFER_SIZE);
           }
           else if(res==2){
             printf("> [%s] Tried to use nickname beginning with 'Guest'\n", buffer+6);
-            writeline(c_sock, "Can't use nickname beginning with 'Guest'\n", BUFFER_SIZE);
+            writeline(c_sock,c_sock, "Can't use nickname beginning with 'Guest'\n", BUFFER_SIZE);
           }
         break;
 
       case WHO :
         printf("> [%s] Requested to see online users\n", nick);
         get_online_users(*clients, buffer);
-        writeline(c_sock, buffer, BUFFER_SIZE);
+        writeline(c_sock,c_sock, buffer, BUFFER_SIZE);
         break;
 
       case WHOIS :
         //check if user exists
+        format_nick(buffer);// je sais pas si c'est nécessaire
         printf("> [%s] ", nick);
         if(exists(*clients, buffer+7)){
           printf("Requested info on %s.\n", buffer+7);
           get_info(*clients, buffer, buffer+7);
-          writeline(c_sock, buffer, BUFFER_SIZE);
+          writeline(c_sock,c_sock, buffer, BUFFER_SIZE);
         }
         else{
           printf("Requested info on non-existent user %s.\n", buffer+7);
-          writeline(c_sock, "This user doesn't exist.\n", BUFFER_SIZE);
+          writeline(c_sock,c_sock, "This user doesn't exist.\n", BUFFER_SIZE);
         }
     }
 
@@ -319,14 +342,14 @@ int main(int argc, char** argv)
           fds[get_available_fd_index(fds)].fd = c_sock;
           add_client_to_list(&clients, c_sock, inet_ntoa( ((struct sockaddr_in * ) c_addr)->sin_addr)/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
           printf("> Connection accepted \n");
-          writeline(c_sock, "Welcome to the server. Please use /nick <your_pseudo> to login\n", BUFFER_SIZE);  // welcome message for the client
+          writeline(c_sock,c_sock, "Welcome to the server. Please use /nick <your_pseudo> to login\n", BUFFER_SIZE);  // welcome message for the client
         }
 
         else{
           c_addrlen = sizeof(*c_addr);
           c_sock = do_accept(sock, c_addr, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
-          writeline(c_sock, "Server cannot accept incoming connections anymore. Please try again later.\n", BUFFER_SIZE);
+          writeline(c_sock,c_sock, "Server cannot accept incoming connections anymore. Please try again later.\n", BUFFER_SIZE);
           printf("> Connection to a client denied, too many clients already connected\n");
           fds[i].fd=-1; //we want to ignore this fd next loops
           //no point in adding client to client list

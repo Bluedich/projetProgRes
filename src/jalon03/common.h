@@ -18,6 +18,6 @@ void error(const char *msg);
 
 int readline(int fd, char * buffer, int maxlen);
 
-int writeline(int fd, char * buffer, int maxlen);
+int writeline(int fd_rcv,int fd_exp, char * buffer, int maxlen);
 
 #endif

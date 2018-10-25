@@ -82,10 +82,7 @@ int create_group(struct listg ** groups, char name[]){
     printf("ERROR trying create the group %s : there already an existing group with this name\n",name);
     return 1;
   }
-
-  strncpy(group->name, name, strlen(name)-1);
-  printf("Name %s haha",group->name);
-
+  
   new_start->group = group;
   new_start->next = *groups;
   *groups=new_start;
@@ -100,11 +97,16 @@ int add_client_to_group(struct group * group, struct client * client){// inutile
 
 int add_client_in_group(struct listg ** groups, struct client * client, char name[]){ // il manque un test pour savoir si le client existe dejà dans la liste
   struct listg * before = *groups;
+
+
   if(before == NULL){
     printf("ERROR trying join the group : there no existing group\nYou can create one with /group <groupname> \n");
     return -1;
   }
-  if( strcmp(before->group->name,name)){
+  if( strcmp(before->group->name,name)){ // c'est le groupe dans lequel on veut ajouter le client
+    if (get_client_by_fd((before->group->clients), NULL, client->fd)==0){
+      return 1; // il est déjà dans la liste
+    }
     add_existing_client_to_list(&(before->group->clients), client);
     return 0;
   }
@@ -115,7 +117,10 @@ int add_client_in_group(struct listg ** groups, struct client * client, char nam
     return -1; // there is no this group
 
   while (current->next != NULL){
-    if(strcmp(current->group->name,name)){ // c'est lui qu'on supprime
+    if(strcmp(current->group->name,name)){ // c'est le groupe dans lequel on veut ajouter le client
+      if (get_client_by_fd((before->group->clients), NULL, client->fd)==0){
+        return 1; // il est déjà dans la liste
+      }
         add_existing_client_to_list(&(current->group->clients), client);
       return 0;
     }
@@ -123,7 +128,10 @@ int add_client_in_group(struct listg ** groups, struct client * client, char nam
     current = current->next;
     before = before->next;
   }
-  if(strcmp(current->group->name,name)){ // c'est lui qu'on supprime
+  if(strcmp(current->group->name,name)){ // c'est le groupe dans lequel on veut ajouter le client
+    if (get_client_by_fd((before->group->clients), NULL, client->fd)==0){
+      return 1; // il est déjà dans la liste
+    }
     add_existing_client_to_list(&(current->group->clients), client);
     return 0;
   }
