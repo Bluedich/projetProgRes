@@ -56,6 +56,21 @@ int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //
   return -1; // il n'existe pas
 }
 
+int get_fd_client_by_name(struct list *clients, char nick[]){
+  struct list * current = clients;
+  if(current == NULL)
+    return -1;
+
+  while (current != NULL){
+    if(current->client->hasNick && strncmp(current->client->nickname, nick,3)==0){ // il faudrait connaître la longueur du nom
+      return current->client->fd;
+    }
+    //sinon on parcour la liste
+    current = current->next;
+  }
+  return -1; // il existe pas
+}
+
 int exists(struct list * clients, char nick[]){
   struct list * current = clients;
   if(current == NULL)

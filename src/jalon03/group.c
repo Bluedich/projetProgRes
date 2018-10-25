@@ -20,36 +20,6 @@ struct list{  // anomali
 };
 
 
-int remove_client(struct list ** clients, int fd){  // existe dejà dans list.c
-  struct list * before = *clients;
-  if(before == NULL){
-    printf("ERROR trying to remove : list empty\n");
-    return -1;
-  }
-  if(before->client->fd == fd){
-    *clients = before->next;
-    return 0;
-  }
-
-  struct list * current = before->next;
-  if(current == NULL)
-    return -1;
-
-  while (current->next != NULL){
-    if(current->client->fd==fd){ // c'est lui qu'on supprime
-      before->next = current->next;
-      return 0;
-    }
-    //sinon on parcour la liste
-    current = current->next;
-    before = before->next;
-  }
-  if(current->client->fd==fd){ // c'est lui qu'on supprime
-    before->next = NULL;
-    return 0;
-  }
-  return -1; // il existe pas
-}
 
 int add_existing_client_to_list(struct list ** clients, struct client * client){  // doit être mis dans list.c
   assert(clients);
@@ -93,7 +63,7 @@ int get_group_by_name(struct listg ** groups, /*struct group ** group,*/ char na
 int get_client_fd_in_group(struct listg ** groups, char name, int *fd[]){ // le but est de renvoyé un tableau avec les fd de tous les clients dans le groupe
   assert(groups);
   struct group * group = (struct group *) malloc(sizeof(struct group));
-   get_group_by_name(groups, /* group,*/  name[]);  // on obtient le bon groupe
+   get_group_by_name(groups, /* group,*/  &name);  // on obtient le bon groupe
    //une fonction dans client qui renvoi les fd de tous les clients(en fait, faut le gros de la fonction plutot dans list.c je pense);
 
   return 0;
@@ -105,15 +75,16 @@ int create_group(struct listg ** groups, char name[]){
   struct group * group = (struct group *) malloc(sizeof(struct group));
   assert(group);
   assert(new_start);
-
   memset(group, 0, sizeof(struct group));
+
 
   if(get_group_by_name(groups,/* &group,*/ name)==0){ // if the name exist, do not create the group
     printf("ERROR trying create the group %s : there already an existing group with this name\n",name);
     return 1;
   }
 
-  strcpy(group->name, name);
+  strncpy(group->name, name, strlen(name)-1);
+  printf("Name %s haha",group->name);
 
   new_start->group = group;
   new_start->next = *groups;
@@ -127,7 +98,7 @@ int add_client_to_group(struct group * group, struct client * client){// inutile
   add_existing_client_to_list(&(group->clients), client);
 }
 
-int add_client_in_group(struct listg ** groups, struct client * client, char name[]){
+int add_client_in_group(struct listg ** groups, struct client * client, char name[]){ // il manque un test pour savoir si le client existe dejà dans la liste
   struct listg * before = *groups;
   if(before == NULL){
     printf("ERROR trying join the group : there no existing group\nYou can create one with /group <groupname> \n");
@@ -140,7 +111,7 @@ int add_client_in_group(struct listg ** groups, struct client * client, char nam
 
   struct listg * current = before->next;
   if(current == NULL)
-  printf("ERROR trying join the group %s : no group with this tag\n",name);
+  printf("ERROR trying BBjoin the group %s : no group with this tag\n",name);
     return -1; // there is no this group
 
   while (current->next != NULL){
@@ -156,7 +127,7 @@ int add_client_in_group(struct listg ** groups, struct client * client, char nam
     add_existing_client_to_list(&(current->group->clients), client);
     return 0;
   }
-  printf("ERROR trying join the group %s : no group with this tag\n",name);
+  printf("ERROR trying AAjoin the group %s : no group with this tag\n",name);
   return -1; // il existe pas
 
 }
@@ -170,25 +141,32 @@ int remove_client_to_group(struct group * group, int fd){ // ne sert à rien
   return err;                 // code de retour de remove_client
 }
 
-int remove_client_in_group(struct listg ** groups, int fd, char name[]){
+int remove_client_in_group(struct listg ** groups, int fd, char name[]){ // fonction pas tout à fait logique avec ce qu'on veut
   struct listg * before = *groups;
+  printf("Channel %shaha",name);
   if(before == NULL){
-    printf("ERROR trying join the group : there no existing group\nYou can create one with /group <groupname> \n");
+    printf("ERROR trying leave the group : there no existing group\nYou can create one with /group <groupname> \n");
     return -1;
   }
   if( strcmp(before->group->name,name)){
     remove_client(&(before->group->clients), fd);
+    if (before->group->clients == NULL){
+      return 10;                // code de retour signifiant qu'il faut supprimer le group
+    }
     return 0;
   }
 
   struct listg * current = before->next;
   if(current == NULL)
-  printf("ERROR trying join the group %s : no group with this tag\n",name);
+  printf("ERROR trying leave the group %s : no group with this tag\n",name);
     return -1; // there is no this group
 
   while (current->next != NULL){
     if(strcmp(current->group->name,name)){ // c'est lui qu'on supprime
       remove_client(&(current->group->clients), fd);
+      if (current->group->clients == NULL){
+        return 10;                // code de retour signifiant qu'il faut supprimer le group
+      }
       return 0;
     }
     //sinon on parcour la liste
@@ -197,9 +175,12 @@ int remove_client_in_group(struct listg ** groups, int fd, char name[]){
   }
   if(strcmp(current->group->name,name)){ // c'est lui qu'on supprime
     remove_client(&(current->group->clients), fd);
+    if (current->group->clients == NULL){
+      return 10;                // code de retour signifiant qu'il faut supprimer le group
+    }
     return 0;
   }
-  printf("ERROR trying join the group %s : no group with this tag\n",name);
+  printf("ERROR trying leave the group %s : no group with this tag\n",name);
   return -1; // il existe pas
 
 }
@@ -242,7 +223,7 @@ int remove_group(struct listg ** groups, char name[]){
 
 
 
-
+/*
 int main(int argc, char ** agrv){ //for testing purposes
   struct listg * groups = (struct listg *) malloc(sizeof(struct listg));
   struct group * group = (struct group *) malloc(sizeof(struct group));
@@ -256,3 +237,4 @@ int main(int argc, char ** agrv){ //for testing purposes
 
 
 }
+*/

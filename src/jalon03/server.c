@@ -1,5 +1,6 @@
 #include "common.h"
 #include "list.h"
+#include "group.h"
 
 #include <stdlib.h>
 #include <sys/types.h>
@@ -13,6 +14,11 @@
 #include <arpa/inet.h>
 
 #define MAX_CL 20
+
+struct listg{
+  struct group * group;
+  struct listg * next;
+};
 
 int do_socket(){
   int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -70,6 +76,9 @@ S_CMD get_command(char * buffer, int s_read){
   if(strncmp(buffer,"/msgall ",8)==0 && strlen(buffer)>8)
     return MSGALL;  // envoi un message en broadcast
 
+  if(strncmp(buffer,"/join ",6)==0 && strlen(buffer)>7)
+    return JOIN;  // envoi un message en broadcast
+
   if(strncmp(buffer,"/nick ",6)==0 && strlen(buffer)>7)
     return NICK;
 
@@ -82,11 +91,13 @@ S_CMD get_command(char * buffer, int s_read){
   return MSG;
 }
 
-int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd){
+int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd, struct listg ** groups){
     char nick[BUFFER_SIZE];
     memset(nick, 0, BUFFER_SIZE);
+    struct client * client=NULL;
     int c_sock = fd->fd;
     int res;
+    int w_sock; // sock du client à qui on veut whisper
     int hasNick = has_nick(*clients, nick, c_sock);
     if(!hasNick && cmd!=NICK && cmd!=QUIT){ //Not allowed to talk until a nickname is chosen
       writeline(c_sock, "Please use /nick <your_pseudo> to login.\n", BUFFER_SIZE);
@@ -94,7 +105,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     }
 
     switch(cmd){
-      case MSG :
+      case MSG :  // command plus ou moins obsolète
         printf("> [%s] %s", nick, buffer);
         writeline(c_sock, buffer, BUFFER_SIZE);
         break;
@@ -106,8 +117,78 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         printf("> [%s] disconnected\n", nick);
         break;
 
+      case LEAVE :
+        res = remove_client_in_group(groups,c_sock,buffer+6); // hummm ça marche pas... Il me dit que le channel exist pas
+        if (res==0){
+          writeline(c_sock, "you have quit", BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
+          break;
+        }
+        if (res==10){
+          writeline(c_sock, "you have quit", BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
+          remove_group(groups,buffer+6);
+          writeline(c_sock, "And", BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
+          writeline(c_sock, "is destroyed", BUFFER_SIZE);// oui c'est immonde
+          printf("> Channel %s destroyed\n", buffer+6);
+          break;
+        }
+        writeline(c_sock, "You are not in channel", BUFFER_SIZE);  // oui c'est immonde
+        writeline(c_sock, buffer+6, BUFFER_SIZE);// oui c'est immonde
+        break;
+
+      case CREATE :
+        if (create_group(groups, buffer+8)==0){// y'a un problème d'argument pour le buffer, y'a un \n qui fait chier
+          writeline(c_sock, "You have create channel", BUFFER_SIZE);  // oui c'est immonde mais c'est pas problématique alors calm down
+          writeline(c_sock, buffer+8, BUFFER_SIZE);
+          writeline(c_sock, "\n", BUFFER_SIZE);
+          printf("> Channel %s create\n", buffer+8);
+          break;
+        }
+        writeline(c_sock, "channel ", BUFFER_SIZE);  // oui c'est immonde
+        writeline(c_sock, buffer+8, BUFFER_SIZE);
+        writeline(c_sock, "Already exist", BUFFER_SIZE);
+        printf("> Channel %s already exist\n", buffer+8);
+        break;
+
+      case MSGW :
+        w_sock = get_fd_client_by_name(*clients,buffer +5); // new function in list.c
+        if (w_sock == -1){
+          writeline(c_sock, "This user does not exist, use /who to see all the user connected", BUFFER_SIZE);
+          break;
+        }
+        writeline(w_sock, buffer, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
+        // quelque probleme encore
+        break;
+
+      case MSGALL :
+        w_sock = get_fd_client_by_name(*clients,buffer +5); // la moi je crérai une fonction qui rempli un tableau d'entier avec tous les fd des clients
+        if (w_sock == -1){
+          writeline(c_sock, "This user does not exist, use /who to see all the user connected\n", BUFFER_SIZE);
+          break;
+        }
+        writeline(w_sock, buffer, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
+        // quelque probleme encore
+        break;
+
+      case JOIN :
+        get_client_by_fd( *clients, &client, c_sock);
+        res = add_client_in_group( groups,  client, buffer +6);
+
+        if (res == -1){
+          writeline(c_sock, "The channel", BUFFER_SIZE);
+          writeline(c_sock, buffer+6, BUFFER_SIZE);
+          writeline(c_sock, " does not exsit\n", BUFFER_SIZE);
+          break;
+        }
+        writeline(c_sock, "You have joined the channel", BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
+        writeline(c_sock, buffer+6, BUFFER_SIZE);
+        // quelque probleme encore
+        break;
+
       case NICK :
-          res = set_nick(*clients, c_sock, buffer+6);  //the first 6 bytes are taken by the command
+          res = set_nick(*clients, c_sock, buffer+6);  //the first 6 bytes are taken by the command (c'est pas plutot 'ignore' que taken)
           if(res==1){
             printf("> Client can't change nick : nick %s already taken.\n", buffer+6);
             writeline(c_sock, "Nickname is already taken. Please chose an other one.\n", BUFFER_SIZE);
@@ -199,6 +280,7 @@ int main(int argc, char** argv)
     struct pollfd fds[MAX_CL+2]; // = (struct pollfd *) malloc((MAX_CL+2)*sizeof(struct pollfd));
     //fds = memset(fds, 0, (MAX_CL+2)*sizeof(struct pollfd));
     struct list * clients = NULL;
+    struct listg * groups = NULL;
 
     fds[0].fd = 0;
     fds[0].events = POLLIN;
@@ -258,7 +340,7 @@ int main(int argc, char** argv)
           //read what the client has to say
           s_read = readline(c_sock, buffer, BUFFER_SIZE);
           s_cmd = get_command(buffer, s_read);
-          command(buffer, s_cmd, &clients, fds+i);
+          command(buffer, s_cmd, &clients, fds+i,&groups);
         }
       }
 
