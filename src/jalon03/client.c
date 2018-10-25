@@ -55,7 +55,7 @@ void do_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
 
 void handle_client_message(int sock, char * buffer, int * cont){
   assert(buffer);
-  if(strncmp(buffer,"/quit",5)==0){
+  if( strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6){
     *cont=0; //stop client
   }
   writeline(sock, buffer, BUFFER_SIZE);

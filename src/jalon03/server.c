@@ -58,6 +58,18 @@ S_CMD get_command(char * buffer, int s_read){
   if((s_read == 0) || (strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6)) //s_read = 0 probably means client has closed socket
     return QUIT;
 
+  if((strncmp(buffer,"/quit",5)==0 && strlen(buffer)>6))
+    return LEAVE;  // leave a group
+
+  if(strncmp(buffer,"/create ",8)==0 && strlen(buffer)>9)
+    return CREATE;  // create a group
+
+  if(strncmp(buffer,"/msg ",5)==0 && strlen(buffer)>6)
+    return MSGW;  // whisper a user
+
+  if(strncmp(buffer,"/msgall ",8)==0 && strlen(buffer)>8)
+    return MSGALL;  // envoi un message en broadcast
+
   if(strncmp(buffer,"/nick ",6)==0 && strlen(buffer)>7)
     return NICK;
 

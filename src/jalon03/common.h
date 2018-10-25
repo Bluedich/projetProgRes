@@ -12,7 +12,7 @@
 
 typedef enum {NONE, RECONNECT, CLOSE} CMD;
 
-typedef enum {MSG, QUIT, NICK, WHO, WHOIS} S_CMD;
+typedef enum {MSG, QUIT, NICK, WHO, WHOIS, MSGW, MSGALL, CREATE, LEAVE} S_CMD;
 
 void error(const char *msg);
 

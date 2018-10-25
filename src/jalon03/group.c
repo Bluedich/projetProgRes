@@ -2,7 +2,10 @@
 #include <time.h>
 #include "list.h"
 
-struct client{
+/////////////////////////////////
+/// Tout ça ne devrait pas être la mais dans list, mais je sais pas faire,
+////////////////////
+struct client{  // anomali
   char nickname[MAX_NICK_SIZE];
   char ip_addr[17];
   int port_nb;
@@ -11,13 +14,13 @@ struct client{
   char con_date[512];
 };
 
-struct list{
+struct list{  // anomali
   struct client * client;
   struct list * next;
 };
 
 
-int remove_client(struct list ** clients, int fd){
+int remove_client(struct list ** clients, int fd){  // existe dejà dans list.c
   struct list * before = *clients;
   if(before == NULL){
     printf("ERROR trying to remove : list empty\n");
@@ -48,7 +51,7 @@ int remove_client(struct list ** clients, int fd){
   return -1; // il existe pas
 }
 
-int add_existing_client_to_list(struct list ** clients, struct client * client){
+int add_existing_client_to_list(struct list ** clients, struct client * client){  // doit être mis dans list.c
   assert(clients);
   struct list * new_start = (struct list *) malloc(sizeof(struct list));
   assert(client);
@@ -58,7 +61,9 @@ int add_existing_client_to_list(struct list ** clients, struct client * client){
   new_start->next = *clients;
   *clients=new_start;
 }
-
+//////////
+//Tout ce qui est plus haut ne devrait pas être là mais dans list.c
+//////
 struct group{
   struct list * clients;
   char name[512];
@@ -83,6 +88,15 @@ int get_group_by_name(struct listg ** groups, /*struct group ** group,*/ char na
     current = current->next;
   }
   return -1; // il existe pas
+}
+
+int get_client_fd_in_group(struct listg ** groups, char name, int *fd[]){ // le but est de renvoyé un tableau avec les fd de tous les clients dans le groupe
+  assert(groups);
+  struct group * group = (struct group *) malloc(sizeof(struct group));
+   get_group_by_name(groups, /* group,*/  name[]);  // on obtient le bon groupe
+   //une fonction dans client qui renvoi les fd de tous les clients(en fait, faut le gros de la fonction plutot dans list.c je pense);
+
+  return 0;
 }
 
 int create_group(struct listg ** groups, char name[]){
@@ -195,7 +209,7 @@ int remove_client_in_group(struct listg ** groups, int fd, char name[]){
 int remove_group(struct listg ** groups, char name[]){
   struct listg * before = *groups;
   if(before == NULL){
-    printf("ERROR trying to remove : there no existing group\n");
+    printf("ERROR trying to remove : there no existing group\n"); // peut être qu'il est tout aussi pertinent d'afficher ça dans server.c
     return -1;
   }
   if( strcmp(before->group->name,name)){
@@ -220,6 +234,7 @@ int remove_group(struct listg ** groups, char name[]){
     before->next = NULL;
     return 0;
   }
+  printf("ERROR trying to remove the group '%s': this group no exist\n",name); // peut être qu'il est tout aussi pertinent d'afficher ça dans server.c
   return -1; // il existe pas
 }
 
