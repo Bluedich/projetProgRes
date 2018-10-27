@@ -16,6 +16,39 @@ int readline(int fd, char * buffer, int maxlen){
   return size_read;
 }
 
+int separate( char  buffer_out[], char  buffer_in[]){
+  assert(buffer_in);
+  assert(buffer_out);
+
+  int i=0;
+  while(strncmp(buffer_in+i," ",1)!=0){ //aller jusqu'au premeir espace
+      i++;
+  }
+  i++;
+  int j=i;
+  while(strncmp(buffer_in+i,"\0",1)!=0){
+    buffer_out[j-i]=buffer_in[j];
+    j++;
+  }
+  buffer_out[j-i]=buffer_in[j];
+  j++;
+  buffer_out[j-i]=buffer_in[j];
+
+  }
+
+int get_name_in_command( char  buffer_out[], char  buffer_in[]){
+  assert(buffer_in);
+  assert(buffer_out);
+
+  int i=0;
+  while(strncmp(buffer_in+i," ",1)){ //aller jusqu'au premeir espace
+      buffer_out[i]=buffer_in[i];
+      i++;
+  }
+  strncpy(buffer_in+i,"\0",1);
+}
+
+
 int writeline(int fd_rcv,int fd_exp, char * buffer, int maxlen){
   assert(buffer);
   int to_send = strlen(buffer);

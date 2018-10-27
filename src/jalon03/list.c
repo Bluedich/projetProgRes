@@ -61,12 +61,11 @@ int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //
 
 int get_fd_client_by_name(struct list *clients, char nick[]){
   struct list * current = clients;
-  int len_nick=3;// La c'est absurde et temporaire, mais il faudrait le len du nick du client Pour cela je pense qu'il faut obliger le client à ne pas avoir d'espace, et après coder un fonction asser simple qui recupère la longeurdu pseudo ou autre
   if(current == NULL)
     return -1;
 
   while (current != NULL){
-    if(current->client->hasNick && strncmp(current->client->nickname, nick,len_nick)==0){ // il faudrait connaître la longueur du nom
+    if(current->client->hasNick && strcmp(current->client->nickname, nick)==0){ // il faudrait connaître la longueur du nom
       return current->client->fd;
     }
     //sinon on parcour la liste

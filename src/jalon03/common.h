@@ -20,4 +20,8 @@ int readline(int fd, char * buffer, int maxlen);
 
 int writeline(int fd_rcv,int fd_exp, char * buffer, int maxlen);
 
+int separate( char buffer_out[], char buffer_in[]);
+
+int get_name_in_command( char  buffer_out[], char  buffer_in[]);
+
 #endif
