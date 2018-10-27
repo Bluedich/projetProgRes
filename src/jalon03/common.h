@@ -18,9 +18,9 @@ void error(const char *msg);
 
 int readline(int fd, char * buffer, int maxlen);
 
-int writeline(int fd_rcv,int fd_exp, char * buffer, int maxlen);
+int writeline(int fd_rcv,char * nick, char * buffer, int maxlen);
 
-int separate( char buffer_out[], char buffer_in[]);
+int separate( char buffer[]);
 
 int get_name_in_command( char  buffer_out[], char  buffer_in[]);
 

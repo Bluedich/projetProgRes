@@ -58,7 +58,7 @@ void handle_client_message(int sock, char * buffer, int * cont){
   if( strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6){
     *cont=0; //stop client
   }
-  writeline(sock,sock, buffer, BUFFER_SIZE);
+  writeline(sock,"Server", buffer, BUFFER_SIZE);
 }
 
 CMD handle_server_response(int sock, char * buffer){
@@ -78,7 +78,7 @@ CMD handle_server_response(int sock, char * buffer){
     }
   }
   else{
-    printf("[Server] : %s", buffer);
+    printf(" %s", buffer);
     return NONE;
   }
 }
