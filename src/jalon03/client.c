@@ -111,7 +111,7 @@ int main(int argc,char** argv) {
     fds[1].fd = sock;
     fds[1].events = POLLIN;
 
-    printf("> ");
+    printf("> ");   // je suis pas sure que ce soit pas de la merde ça
     fflush(stdout); //to make sure above printf is displayed
 
     do{
@@ -144,7 +144,7 @@ int main(int argc,char** argv) {
           break;
         }
       }
-      printf("> ");
+      printf("> ");   // C'est un peu de la merde ça
       fflush(stdout); //to make sure above printf is displayed
     }while(cont);
     printf("Stopping client\n");
