@@ -49,9 +49,22 @@ int get_name_in_command( char  buffer_out[], char  buffer_in[]){
 
 int writeline(int fd_rcv,char nick[], char * buffer, int maxlen){
   assert(buffer);
+  assert(nick);
   int to_send = strlen(buffer);
   int sent;
   int i=0;
+  //nick=strcat(nick,buffer);
+  to_send = strlen(nick);
+    while(to_send>0 || i>1000){ //try maximum of 1000 times
+      sent=write(fd_rcv, nick, to_send);
+      if (sent==-1)
+        error("ERROR writing line");
+      to_send-=sent;
+      i++;
+
+    }
+
+    to_send = strlen(buffer);
 
     while(to_send>0 || i>1000){ //try maximum of 1000 times
       sent=write(fd_rcv, buffer, to_send);
@@ -59,6 +72,7 @@ int writeline(int fd_rcv,char nick[], char * buffer, int maxlen){
         error("ERROR writing line");
       to_send-=sent;
       i++;
+
     }
 
   //if(to_send)
