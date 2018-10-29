@@ -65,7 +65,23 @@ int create_message(char nick[], char * buffer[]){
     temp[i+nick_len+5]=(*buffer)[i];
   }
   temp[to_send+nick_len+6]=(*buffer)[to_send+1];
-  buffer = &temp;
+
+  //buffer = &temp; malheureusemnt ne fonctionne pas visiblement on fait carctere par caractere alors, ce qui est suremetn normal vu que temp n'existe pas en dehors de la fonction
+  to_send=strlen(temp);
+  i=0;
+//  printf("buffer avant ? %s\n",*buffer);
+//  printf("buffer qu'il faudraoit ? %s\n",temp);
+//  memset(buffer, 0, BUFFER_SIZE);
+  *buffer = malloc(sizeof(char)*BUFFER_SIZE);
+  //printf("je doit envoyer quoi ? %d\n",to_send);
+  //printf("buffer après ? %s\n",*buffer);
+
+  strcpy(*buffer,temp);
+//  printf("buffer encore après ? %s\n",*buffer);
+//  printf("je doit envoyer quoi ? %d\n",to_send);
+//  printf("je devrait pourtant pourovir sortir %s\n",*buffer);
+//  printf("prout\n");
+
 
   return 0;
 }
@@ -76,8 +92,10 @@ int writeline(int fd_rcv,char nick[], char * buffer, int maxlen){
   int i=0;
   int to_send=0;
   int sent =0;
-  create_message(nick,&buffer);
+
+  create_message(nick,&buffer); // ça ne modife pas le buffer :/
   to_send = strlen(buffer);
+//  printf("lerreur ce fait la ?");
   while(to_send>0 || i<1000){ //try maximum of 1000 times
     sent=write(fd_rcv, buffer, to_send);
     if (sent==-1)

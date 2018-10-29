@@ -73,7 +73,9 @@ int get_available_fd_index(struct pollfd * fds){
 }
 
 S_CMD get_command(char * buffer, int s_read){
-
+  separate(buffer); // pas super beau, mais c'est pour enlever le "[<username>] : " avant les messages
+  separate(buffer); // et le problème que l'on a c'est que l'on peut aussi avoir des "[<groupname>] [<username>] : "
+ // autant pour moi, ce dernier cas n'arrive enfait pas
   if((s_read == 0) || (strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6)) //s_read = 0 probably means client has closed socket
     return QUIT;
 
