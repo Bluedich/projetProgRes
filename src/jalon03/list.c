@@ -196,10 +196,14 @@ int get_info(struct list * clients, char buffer[], char nick[]){
 int set_nick(struct list * clients, int fd, char nick[]){
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
+  int i;
   format_nick(nick);
-  if (strncmp("Guest", nick,5) == 0)
+  if (strncmp( nick, "Guest", 5) == 0){
+    printf("ERROR unvalid nick name");
     return 2;
+    }
   if(get_client_by_nick(clients, &client, nick)==0){
+    printf("ERROR unvalid nick name");
     return 1;
   }
   if(get_client_by_fd(clients, &client, fd) == -1){
@@ -207,6 +211,13 @@ int set_nick(struct list * clients, int fd, char nick[]){
     return -1;
   }
   client->hasNick = 1;
+  for (i=0;i<strlen(nick);i++){
+    if (strncmp(nick+i," ",1)==0){
+      printf("ERROR unvalid nick name");
+      return 3;
+    }
+    i++;
+  }
   strcpy(client->nickname, nick);
   //free(client);
   return 0;

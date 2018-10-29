@@ -279,6 +279,10 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
             printf("> [%s] Tried to use nickname beginning with 'Guest'\n", buffer);
             writeline(c_sock,"Server", "Can't use nickname beginning with 'Guest'\n", BUFFER_SIZE);
           }
+          else if(res==3){
+            printf("> [%s] Tried to use nickname containing ' '\n", buffer);
+            writeline(c_sock,"Server", "Can't use nickname containing ' '\n", BUFFER_SIZE);
+          }
         break;
 
       case WHO :

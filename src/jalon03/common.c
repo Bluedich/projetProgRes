@@ -47,13 +47,11 @@ int get_name_in_command( char  buffer_out[], char  buffer_in[]){
 }
 
 
-int writeline(int fd_rcv,char nick[], char * buffer, int maxlen){
-  assert(buffer);
-  assert(nick);
+int create_message(char nick[], char * buffer[]){
   char * temp = malloc(sizeof(char)*BUFFER_SIZE);
   //strcpy(temp,buffer);
   memset(temp, 0, BUFFER_SIZE);
-  int to_send = strlen(buffer);
+  int to_send = strlen(*buffer);
   int sent;
   int i=0;
   int nick_len = strlen(nick);
@@ -64,34 +62,30 @@ int writeline(int fd_rcv,char nick[], char * buffer, int maxlen){
   }
   strcat(temp,"] : ");
   for (int i=0;i<to_send;i++){
-    temp[i+nick_len+5]=buffer[i];
+    temp[i+nick_len+5]=(*buffer)[i];
   }
-  temp[to_send+nick_len+6]=buffer[to_send+1];
-  //nick=strcat(nick,buffer);
+  temp[to_send+nick_len+6]=(*buffer)[to_send+1];
+  buffer = &temp;
 
+  return 0;
+}
 
-  to_send = strlen(temp);
-    while(to_send>0 || i<1000){ //try maximum of 1000 times
-      sent=write(fd_rcv, temp, to_send);
-      if (sent==-1)
-        error("ERROR writing line");
-      to_send-=sent;
-      i++;
-
+int writeline(int fd_rcv,char nick[], char * buffer, int maxlen){
+  assert(buffer);
+  assert(nick);
+  int i=0;
+  int to_send=0;
+  int sent =0;
+  create_message(nick,&buffer);
+  to_send = strlen(buffer);
+  while(to_send>0 || i<1000){ //try maximum of 1000 times
+    sent=write(fd_rcv, buffer, to_send);
+    if (sent==-1)
+      error("ERROR writing line");
+    to_send-=sent;
+    i++;
     }
-/*
 
-    to_send = strlen(buffer);
-
-    while(to_send>0 || i<1000){ //try maximum of 1000 times
-      sent=write(fd_rcv, buffer, to_send);
-      if (sent==-1)
-        error("ERROR writing line");
-      to_send-=sent;
-      i++;
-
-    }
-*/
   //if(to_send)
     //printf("> Only managed to send %d out of %d bytes of the message.\n", ((int) strlen(buffer))-to_send, (int) strlen(buffer));
   //else
