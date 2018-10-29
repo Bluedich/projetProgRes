@@ -19,6 +19,19 @@ struct listg{
   struct group * group;
   struct listg * next;
 };
+struct group{
+  struct list * clients;
+  char name[512];
+};
+struct client{
+  char nickname[MAX_NICK_SIZE];
+  char activegroup[MAX_NICK_SIZE];
+  char ip_addr[17];
+  int port_nb;
+  int hasNick;
+  int fd;
+  char con_date[512];
+};
 
 int do_socket(){
   int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -70,14 +83,17 @@ S_CMD get_command(char * buffer, int s_read){
   if(strncmp(buffer,"/create ",8)==0 && strlen(buffer)>9)
     return CREATE;  // create a group
 
+  if(strncmp(buffer,"/join ",6)==0 && strlen(buffer)>7)
+    return JOIN;  // envoi un message en broadcast
+
+  if(strncmp(buffer,"/active ",8)==0 && strlen(buffer)>9)
+    return ACTIVE;
+
   if(strncmp(buffer,"/msg ",5)==0 && strlen(buffer)>6)
     return MSGW;  // whisper a user
 
   if(strncmp(buffer,"/msgall ",8)==0 && strlen(buffer)>8)
     return MSGALL;  // envoi un message en broadcast
-
-  if(strncmp(buffer,"/join ",6)==0 && strlen(buffer)>7)
-    return JOIN;  // envoi un message en broadcast
 
   if(strncmp(buffer,"/nick ",6)==0 && strlen(buffer)>7)
     return NICK;
@@ -97,6 +113,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     char nickw[BUFFER_SIZE];
     memset(nickw, 0, BUFFER_SIZE);
     struct client * client=NULL;
+    struct group * group=NULL;
     int c_sock = fd->fd;
     int res;
     int w_sock; // sock du client à qui on veut whisper
@@ -105,12 +122,33 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     int hasNick = has_nick(*clients, nick, c_sock);
     format_nick(nick);
     if(!hasNick && cmd!=NICK && cmd!=QUIT){ //Not allowed to talk until a nickname is chosen
-      writeline(c_sock,"[Server] : ", "Please use /nick <your_pseudo> to login.\n", BUFFER_SIZE);
+      writeline(c_sock,"Server", "Please use /nick <your_pseudo> to login.\n", BUFFER_SIZE);
       return 0;
     }
 
     switch(cmd){
-      case MSG :  // command plus ou moins obsolète
+      case MSG :  // on parle dans le groupe actif
+        //format_nick(buffer);
+        get_client_by_fd( *clients, &client, c_sock);
+        res = get_group_by_name(groups, &group, client->activegroup);
+        if (res == -1){
+          writeline(c_sock,"Server", "You are not active is an existing group\n Use /active to actived a group\n", BUFFER_SIZE);
+          break;
+        }
+        // il faut regarder d'abord si le client est dans le groupe aussi
+        nb_client=nb_client_in_list(group->clients);
+        memset(sock_tab,0,20);
+        res = get_fd_client(group->clients,sock_tab); // rempli un tableau d'entier avec tous les fd des clients
+        if (res == -1){// ça n'arrivera plus ou moins jamais
+          writeline(c_sock,"Server", "There none client in the group\n", BUFFER_SIZE);
+          break;
+        }
+        for (res=0;res<nb_client;res++){// utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
+          if (sock_tab[res]!=c_sock){// ne l'affiche pas à l'expéditeur
+            writeline(sock_tab[res], nick, buffer, BUFFER_SIZE);
+          }
+        }
+        break;
         printf("> [%s] %s", nick, buffer);
         writeline(c_sock,nick, buffer, BUFFER_SIZE);
         break;
@@ -128,18 +166,18 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         res = remove_client_in_group(groups,c_sock,buffer);
         if (res==0){
           buffer = strcat(buffer,"is not one of your channel anymore\n");
-          writeline(c_sock,"[Server] : ", buffer, BUFFER_SIZE);
+          writeline(c_sock,"Server", buffer, BUFFER_SIZE);
           break;
         }
         if (res==10){
           printf("> Channel %s destroyed\n", buffer);
           buffer = strcat(buffer,"is not one of your channel anymore, and the salln is destroyed\n");
-          writeline(c_sock,"[Server] : ", buffer, BUFFER_SIZE);
+          writeline(c_sock,"Server", buffer, BUFFER_SIZE);
           remove_group(groups,buffer);
           break;
         }
         buffer = strcat(buffer,"is not one of your channel, you can't leave it\n");
-        writeline(c_sock,"[Server] : ", buffer, BUFFER_SIZE);
+        writeline(c_sock,"Server", buffer, BUFFER_SIZE);
         break;
 
       case CREATE :
@@ -147,14 +185,53 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         separate(buffer);
         if (create_group(groups, buffer)==0){
           printf("> Channel %s created\n", buffer);
-          buffer = strcat(buffer,"is created\n");
-          writeline(c_sock,"[Server] : ", buffer, BUFFER_SIZE);
+          buffer = strcat(buffer," is created\n");
+          writeline(c_sock,"Server", buffer, BUFFER_SIZE);
 
           break;
         }
         printf("> Channel %s already exist\n", buffer);
-        buffer = strcat(buffer,": already a channel with this name\n");
-        writeline(c_sock,"[Server] : ", buffer, BUFFER_SIZE);
+        buffer = strcat(buffer,"is already an existing channel\n");
+        writeline(c_sock,"Server", buffer, BUFFER_SIZE);
+        break;
+
+      case JOIN :
+        format_nick(buffer);  // pour utiliser separate
+        separate(buffer);
+        res = add_client_in_group( clients, groups, c_sock, buffer);
+        if (res == -1){
+          buffer = strcat(buffer," is not an existing channel\n");
+          writeline(c_sock,"Server", buffer, BUFFER_SIZE);
+          break;
+        }
+        if (res == 1){
+          buffer = strcat(buffer," is already one of your channel\n");
+          writeline(c_sock,"Server", buffer, BUFFER_SIZE);
+          break;
+        }
+        buffer = strcat(buffer," is now one of you channel\n");
+        writeline(c_sock,"Server", buffer, BUFFER_SIZE);
+        break;
+
+      case ACTIVE :
+        format_nick(buffer);  // pour utiliser separate
+        get_client_by_fd( *clients, &client, c_sock);
+        separate(buffer);
+        res = client_is_in_group( groups,  c_sock, buffer);
+
+        if (res == -1){
+          buffer = strcat(buffer," is not an existing channel\nYou can use /create <channel> to create a new channel\n");
+          writeline(c_sock,"Server", buffer, BUFFER_SIZE);
+          break;
+        }
+        if (res == 1){
+          strcpy(client->activegroup,buffer);
+          buffer = strcat(buffer," is now one your active channel\n");
+          writeline(c_sock,"Server", buffer, BUFFER_SIZE);
+          break;
+        }
+        buffer = strcat(buffer," is not one of your channel\nUse /join <channel> to join this channel\n");
+        writeline(c_sock,"Server", buffer, BUFFER_SIZE);
         break;
 
       case MSGW :
@@ -163,7 +240,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         get_name_in_command( nickw, buffer);
         w_sock = get_fd_client_by_name(*clients,nickw ); // new function in list.c
         if (w_sock == -1){
-          writeline(c_sock,"[Server] : ", "This user does not exist, use /who to see all the user connected\n", BUFFER_SIZE);
+          writeline(c_sock,"Server", "This user does not exist, use /who to see all the user connected\n", BUFFER_SIZE);
           break;
         }
         separate(buffer);
@@ -177,7 +254,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         memset(sock_tab,0,20);
         res = get_fd_client(*clients,sock_tab); // rempli un tableau d'entier avec tous les fd des clients
         if (res == -1){// ça n'arrivera plus ou moins jamais
-          writeline(c_sock,"[Server] : ", "There none client connect to the server\n", BUFFER_SIZE);
+          writeline(c_sock,"Server", "There none client connect to the server\n", BUFFER_SIZE);
           break;
         }
         for (res=0;res<nb_client;res++){// utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
@@ -187,47 +264,27 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         }
         break;
 
-      case JOIN :
-        format_nick(buffer);  // pour utiliser separate
-        get_client_by_fd( *clients, &client, c_sock);
-        separate(buffer);
-        res = add_client_in_group( groups,  client, buffer);
-
-        if (res == -1){
-          buffer = strcat(buffer,"is not an existing channel\n");
-          writeline(c_sock,"[Server] : ", buffer, BUFFER_SIZE);
-          break;
-        }
-        if (res == 1){
-          buffer = strcat(buffer,"is already one of your channel\n");
-          writeline(c_sock,"[Server] : ", buffer, BUFFER_SIZE);
-          break;
-        }
-        buffer = strcat(buffer,"is now one of you channel\n");
-        writeline(c_sock,"[Server] : ", buffer, BUFFER_SIZE);
-        break;
-
       case NICK :
           separate(buffer);
           res = set_nick(*clients, c_sock, buffer);  //the first 6 bytes are taken by the command (c'est pas plutot 'ignore' que taken)
           if(res==1){
             printf("> Client can't change nick : nick %s already taken.\n", buffer);
-            writeline(c_sock,"[Server] : ", "Nickname is already taken. Please chose an other one.\n", BUFFER_SIZE);
+            writeline(c_sock,"Server", "Nickname is already taken. Please chose an other one.\n", BUFFER_SIZE);
           }
           else if(res==0){
             printf("> [%s] Nickname set\n", buffer);
-            writeline(c_sock,"[Server] : ", "Nickname set. You can now use the server !\n", BUFFER_SIZE);
+            writeline(c_sock,"Server", "Nickname set. You can now use the server !\n", BUFFER_SIZE);
           }
           else if(res==2){
             printf("> [%s] Tried to use nickname beginning with 'Guest'\n", buffer);
-            writeline(c_sock,"[Server] : ", "Can't use nickname beginning with 'Guest'\n", BUFFER_SIZE);
+            writeline(c_sock,"Server", "Can't use nickname beginning with 'Guest'\n", BUFFER_SIZE);
           }
         break;
 
       case WHO :
         printf("> [%s] Requested to see online users\n", nick);
         get_online_users(*clients, buffer);
-        writeline(c_sock,"[Server] : ", buffer, BUFFER_SIZE);
+        writeline(c_sock,"Server", buffer, BUFFER_SIZE);
         break;
 
       case WHOIS :
@@ -238,11 +295,11 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         if(exists(*clients, buffer)){
           printf("Requested info on %s.\n", buffer);
           get_info(*clients, buffer, buffer);
-          writeline(c_sock,"[Server] : ", buffer, BUFFER_SIZE);
+          writeline(c_sock,"Server", buffer, BUFFER_SIZE);
         }
         else{
           printf("Requested info on non-existent user %s.\n", buffer);
-          writeline(c_sock,"[Server] : ", "This user doesn't exist.\n", BUFFER_SIZE);
+          writeline(c_sock,"Server", "This user doesn't exist.\n", BUFFER_SIZE);
         }
     }
 
@@ -342,7 +399,7 @@ int main(int argc, char** argv)
           fds[get_available_fd_index(fds)].fd = c_sock;
           add_client_to_list(&clients, c_sock, inet_ntoa( ((struct sockaddr_in * ) c_addr)->sin_addr)/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
           printf("> Connection accepted \n");
-          writeline(c_sock,"[Server] : ", "Welcome to the server. Please use /nick <your_pseudo> to login\n", BUFFER_SIZE);  // welcome message for the client
+          writeline(c_sock,"Server", "Welcome to the server. Please use /nick <your_pseudo> to login\n", BUFFER_SIZE);  // welcome message for the client
         }
 
         else{

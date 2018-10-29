@@ -3,6 +3,7 @@
 
 struct client{
   char nickname[MAX_NICK_SIZE];
+  char activegroup[MAX_NICK_SIZE];
   char ip_addr[17];
   int port_nb;
   int hasNick;

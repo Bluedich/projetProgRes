@@ -58,13 +58,15 @@ int writeline(int fd_rcv,char nick[], char * buffer, int maxlen){
   int i=0;
   int nick_len = strlen(nick);
 
-  for (int i=0;i<to_send;i++){
-    temp[i+nick_len]=buffer[i];
-  }
+  strcat(temp,"[");
   for (int i=0;i<nick_len;i++){
-    temp[i]=nick[i];
+    temp[i+1]=nick[i];
   }
-  temp[to_send+nick_len+1]="buffer[to_send+1]";
+  strcat(temp,"] : ");
+  for (int i=0;i<to_send;i++){
+    temp[i+nick_len+5]=buffer[i];
+  }
+  temp[to_send+nick_len+6]=buffer[to_send+1];
   //nick=strcat(nick,buffer);
 
 
