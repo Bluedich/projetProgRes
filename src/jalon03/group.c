@@ -5,7 +5,7 @@
 /////////////////////////////////
 /// Tout ça ne devrait pas être la mais dans list, mais je sais pas faire,
 ////////////////////
-struct client{  // anomali
+struct client{  // anomali   normalement je devrais pas en avoir besoin moi je penses, mais selon mon compilateur si
   char nickname[MAX_NICK_SIZE];
   char ip_addr[17];
   int port_nb;
@@ -14,13 +14,13 @@ struct client{  // anomali
   char con_date[512];
 };
 
-struct list{  // anomali
+struct list{  // anomali, normalement je devrais pas en avoir besoin moi je penses, mais selon mon compilateur si
   struct client * client;
   struct list * next;
 };
 
 
-
+// add an existing client to a linked list clients (mainly usefull for a linked list of strct group)
 int add_existing_client_to_list(struct list ** clients, struct client * client){  // doit être mis dans list.c
   assert(clients);
   struct list * new_start = (struct list *) malloc(sizeof(struct list));
@@ -47,7 +47,7 @@ struct listg{
 int get_group_by_name(struct listg ** groups, struct group ** group, char name[]){
   struct listg * current = *groups;
   if(current == NULL)
-    return -1;
+    return -1;  // there is no this group
 
   while (current != NULL){
     printf("%s\n",current->group->name);
@@ -58,13 +58,13 @@ int get_group_by_name(struct listg ** groups, struct group ** group, char name[]
     //sinon on parcour la liste
     current = current->next;
   }
-  return -1; // il existe pas
+  return -1; // there is no this group
 }
 
-int group_exist(struct listg ** groups, char name[]){ //internal function
+int group_exist(struct listg ** groups, char name[]){ // jepense que cette fonction pourrai juste être interne
   struct listg * current = *groups;                                               // group with name name exist ?
   if(current == NULL)
-    return -1;
+    return -1;  // there is no this group
 
   while (current != NULL){
     printf("%s\n",current->group->name);
@@ -74,14 +74,14 @@ int group_exist(struct listg ** groups, char name[]){ //internal function
     //sinon on parcour la liste
     current = current->next;
   }
-  return -1; // il existe pas
+  return -1; // there is no this group
 }
 
-int get_client_fd_in_group(struct listg ** groups, char name, int *fd[]){ // le but est de renvoyé un tableau avec les fd de tous les clients dans le groupe
+int get_client_fd_in_group(struct listg ** groups, char name, int *fd[]){ // surement inutilie
   assert(groups);
   struct group * group = (struct group *) malloc(sizeof(struct group));
-   get_group_by_name(groups,  &group,  &name);  // on obtient le bon groupe
-   //une fonction dans client qui renvoi les fd de tous les clients(en fait, faut le gros de la fonction plutot dans list.c je pense);
+  get_group_by_name(groups,  &group,  &name);  // on obtient le bon groupe
+  // enfait je l'ai fait dans list.c en gros
 
   return 0;
 }
@@ -107,7 +107,7 @@ int create_group(struct listg ** groups, char name[]){
   return 0;
 }
 
-int add_client_to_group(struct group * group, struct client * client){// inutile function
+int add_client_to_group(struct group * group, struct client * client){// Ne sert à rien
   assert(client);
   assert(group);
   add_existing_client_to_list(&(group->clients), client);
@@ -140,7 +140,7 @@ int add_client_in_group(struct list ** clients, struct listg ** groups, int c_so
   while (current->next != NULL){
     if(strcmp(current->group->name,name)==0){ // c'est le groupe dans lequel on veut ajouter le client
       if (get_client_by_fd((before->group->clients), NULL, c_sock)==0){
-        return 1; // il est déjà dans la liste
+        return 1; // il est déjà dans le groupe
       }
         add_existing_client_to_list(&(current->group->clients), client);
       return 0;
@@ -151,42 +151,42 @@ int add_client_in_group(struct list ** clients, struct listg ** groups, int c_so
   }
   if(strcmp(current->group->name,name)==0){ // c'est le groupe dans lequel on veut ajouter le client
     if (get_client_by_fd((before->group->clients), NULL, c_sock)==0){
-      return 1; // il est déjà dans la liste
+      return 1; // il est déjà dans le groupe
     }
     add_existing_client_to_list(&(current->group->clients), client);
     return 0;
   }
   printf("ERROR trying AAjoin the group %s : no group with this tag\n",name);
-  return -1; // il existe pas
+  return -1; // le groupe existe pas
 
 }
 
 
-int client_is_in_group(struct listg ** groups, int c_sock, char name[]){ // il manque un test pour savoir si le client existe dejà dans la liste
+int client_is_in_group(struct listg ** groups, int c_sock, char name[]){ // test pour savoir si le client est dans la liste
   struct listg * before = *groups;
 
   if(before == NULL){
     printf("ERROR trying join the group : there no existing group\nYou can create one with /group <groupname> \n");
-    return -1;
+    return -1;  // the group does not exist
   }
-  if( strcmp(before->group->name,name)==0){ // c'est le groupe dans lequel on veut ajouter le client
+  if( strcmp(before->group->name,name)==0){ // c'est le groupe dans lequel on veut savoir si le client y est
     if (get_client_by_fd((before->group->clients), NULL, c_sock)==0){
-      return 1; // il est déjà dans la liste
+      return 1; // il est bien dans la liste
     }
-    return 0;
+    return 0;   // il y est pas
   }
 
   struct listg * current = before->next;
   if(current == NULL)
   printf("ERROR trying BBjoin the group %s : no group with this tag\n",name);
-    return -1; // there is no this group
+    return -1; // the group does not exist
 
   while (current->next != NULL){
     if(strcmp(current->group->name,name)==0){ // c'est le groupe dans lequel on veut ajouter le client
       if (get_client_by_fd((before->group->clients), NULL, c_sock)==0){
         return 1; // il est déjà dans la liste
       }
-      return 0;
+      return 0; // il y est pas
     }
     //sinon on parcour la liste
     current = current->next;
@@ -196,10 +196,10 @@ int client_is_in_group(struct listg ** groups, int c_sock, char name[]){ // il m
     if (get_client_by_fd((before->group->clients), NULL, c_sock)==0){
       return 1; // il est déjà dans la liste
     }
-    return 0;
+    return 0; // il y est pas
   }
   printf("ERROR trying AAjoin the group %s : no group with this tag\n",name);
-  return -1; // il existe pas
+  return -1; // the group does not exist
 
 }
 
@@ -213,25 +213,24 @@ int remove_client_to_group(struct group * group, int fd){ // ne sert à rien
   return err;                 // code de retour de remove_client
 }
 
-int remove_client_in_group(struct listg ** groups, int fd, char name[]){ // fonction pas tout à fait logique avec ce qu'on veut
+int remove_client_in_group(struct listg ** groups, int fd, char name[]){
   struct listg * before = *groups;
-  printf("Channel %shaha",name);
   if(before == NULL){
     printf("ERROR trying leave the group : there no existing group\nYou can create one with /group <groupname> \n");
-    return -1;
+    return -1;  // the group does not exist
   }
   if( strcmp(before->group->name,name)){
     remove_client(&(before->group->clients), fd);
     if (before->group->clients == NULL){
       return 10;                // code de retour signifiant qu'il faut supprimer le group
     }
-    return 0;
+    return 0;   // the client leave the group
   }
 
   struct listg * current = before->next;
   if(current == NULL)
   printf("ERROR trying leave the group %s : no group with this tag\n",name);
-    return -1; // there is no this group
+    return -1;    // the group does not exist
 
   while (current->next != NULL){
     if(strcmp(current->group->name,name)){ // c'est lui qu'on supprime
@@ -239,7 +238,7 @@ int remove_client_in_group(struct listg ** groups, int fd, char name[]){ // fonc
       if (current->group->clients == NULL){
         return 10;                // code de retour signifiant qu'il faut supprimer le group
       }
-      return 0;
+      return 0;       // the client leave the group (peut être faudrait il plutot retrouné le code de retour de remove_client pour avoir plus de valeur de retour j'y est pas réfléchi, en vrai je crois pas qu'il y est besoin)
     }
     //sinon on parcour la liste
     current = current->next;
@@ -250,10 +249,10 @@ int remove_client_in_group(struct listg ** groups, int fd, char name[]){ // fonc
     if (current->group->clients == NULL){
       return 10;                // code de retour signifiant qu'il faut supprimer le group
     }
-    return 0;
+    return 0;    // the client leave the group
   }
   printf("ERROR trying leave the group %s : no group with this tag\n",name);
-  return -1; // il existe pas
+  return -1; // the group does not exist
 
 }
 
@@ -262,22 +261,22 @@ int remove_client_in_group(struct listg ** groups, int fd, char name[]){ // fonc
 int remove_group(struct listg ** groups, char name[]){
   struct listg * before = *groups;
   if(before == NULL){
-    printf("ERROR trying to remove : there no existing group\n"); // peut être qu'il est tout aussi pertinent d'afficher ça dans server.c
-    return -1;
+    printf("ERROR trying to remove : there no existing group\n");
+    return -1;  // the group does not exist
   }
   if( strcmp(before->group->name,name)){
     *groups = before->next;
-    return 0;
+    return 0;   // group has to be deleted
   }
 
   struct listg * current = before->next;
   if(current == NULL)
-    return -1;
+    return -1;  // the group does not exist
 
   while (current->next != NULL){
     if(strcmp(current->group->name,name)){ // c'est lui qu'on supprime
       before->next = current->next;
-      return 0;
+      return 0; // group has to be deleted
     }
     //sinon on parcour la liste
     current = current->next;
@@ -285,10 +284,10 @@ int remove_group(struct listg ** groups, char name[]){
   }
   if(strcmp(current->group->name,name)){ // c'est lui qu'on supprime
     before->next = NULL;
-    return 0;
+    return 0; // group has to be deleted
   }
   printf("ERROR trying to remove the group '%s': this group no exist\n",name); // peut être qu'il est tout aussi pertinent d'afficher ça dans server.c
-  return -1; // il existe pas
+  return -1;  // the group does not exist
 }
 
 

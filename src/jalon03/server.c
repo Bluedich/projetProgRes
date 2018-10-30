@@ -73,9 +73,9 @@ int get_available_fd_index(struct pollfd * fds){
 }
 
 S_CMD get_command(char * buffer, int s_read){
-  separate(buffer); // pas super beau, mais c'est pour enlever le "[<username>] : " avant les messages
-  separate(buffer); // et le problème que l'on a c'est que l'on peut aussi avoir des "[<groupname>] [<username>] : "
- // autant pour moi, ce dernier cas n'arrive enfait pas
+  //separate(buffer); // pas super beau, mais c'est pour enlever le "[<username>] : " avant les messages
+  //separate(buffer); // et le problème que l'on a c'est que l'on peut aussi avoir des "[<groupname>] [<username>] : "
+ // autant pour moi, ce dernier cas n'arrive enfait pas, car seul le client recevra ce type de message normalement
   if((s_read == 0) || (strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6)) //s_read = 0 probably means client has closed socket
     return QUIT;
 
@@ -89,23 +89,28 @@ S_CMD get_command(char * buffer, int s_read){
     return JOIN;  // envoi un message en broadcast
 
   if(strncmp(buffer,"/active ",8)==0 && strlen(buffer)>9)
-    return ACTIVE;
+    return ACTIVE;  // active a group (ce qu'il fait que l'on peut parler dans ce groupe sans commande)
 
   if(strncmp(buffer,"/msg ",5)==0 && strlen(buffer)>6)
-    return MSGW;  // whisper a user
+    return MSGW;  // whisper to a user
 
   if(strncmp(buffer,"/msgall ",8)==0 && strlen(buffer)>8)
-    return MSGALL;  // envoi un message en broadcast
+    return MSGALL;  // send the message in broadcast
+    // On pourrait considérer le broadcast également comme un groupe, par défault actif, avec 3 moyen différent de parler en broadcast /msgall juste normalement
+
+ // Il faudrait aussi une fonction pour parler dans un groupe même si il est pas actif /msggroup <groupname> <msg>
+ // Il faut alors bien gérer le fait si l'on est bien dans le groupe, et puis envoyer le message dans le format [<groupname>] [<username>] : <msg>
+ // Tout ça se fait enfait relativement bien, mais proprement je sais pas trop
 
   if(strncmp(buffer,"/nick ",6)==0 && strlen(buffer)>7)
-    return NICK;
+    return NICK;  //set a nickname
 
   if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5)
-    return WHO;
-
+    return WHO;  // get the infomation of all the user connect to the server
+// On pourrait rajouter une commande du style /whoareingroup <channel> (qui renvoie toues les user d'un groupes) et /group (qui renvoi tous les groups existant)
   if(strncmp(buffer,"/whois ",7)==0 && strlen(buffer)>8)
     return WHOIS;
-
+// On pourrait rajouter l'information des groupes auxquels appartient le joueur
   return MSG;
 }
 
@@ -116,11 +121,11 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     memset(nickw, 0, BUFFER_SIZE);
     struct client * client=NULL;
     struct group * group=NULL;
-    int c_sock = fd->fd;
+    int c_sock = fd->fd;// sock client
     int res;
-    int w_sock; // sock du client à qui on veut whisper
-    int nb_client; // nombre de client dans un groupe(sera claculer arpès)
-    int sock_tab[20];//array wich will contain all the sock of the clients in a group
+    int w_sock;         // stock the socket of the client you whisper to
+    int nb_client;      // number of client conected to the server
+    int sock_tab[20];   //array wich will contain all the sock of all the clients in a group
     int hasNick = has_nick(*clients, nick, c_sock);
     format_nick(nick);
     if(!hasNick && cmd!=NICK && cmd!=QUIT){ //Not allowed to talk until a nickname is chosen
@@ -134,19 +139,20 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         get_client_by_fd( *clients, &client, c_sock);
         res = get_group_by_name(groups, &group, client->activegroup);
         if (res == -1){
-          writeline(c_sock,"Server", "You are not active is an existing group\n Use /active to actived a group\n", BUFFER_SIZE);
+          writeline(c_sock,"Server", "You are not active in an existing group\n Use /active to actived a group\n", BUFFER_SIZE);
           break;
         }
+        // la ça me fait penser que je penses que l'on a le problème que lorsqu'un a client quitte un groupe, cela ne change pas son activegroup, pas dur à changer
         // il faut regarder d'abord si le client est dans le groupe aussi
         nb_client=nb_client_in_list(group->clients);
         memset(sock_tab,0,20);
         res = get_fd_client(group->clients,sock_tab); // rempli un tableau d'entier avec tous les fd des clients
-        if (res == -1){// ça n'arrivera plus ou moins jamais
-          writeline(c_sock,"Server", "There none client in the group\n", BUFFER_SIZE);
+        if (res == -1){               // ça n'arrivera plus ou moins jamais
+          writeline(c_sock,"Server", "You are the unique user of the group\n", BUFFER_SIZE);
           break;
         }
-        for (res=0;res<nb_client;res++){// utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
-          if (sock_tab[res]!=c_sock){// ne l'affiche pas à l'expéditeur
+        for (res=0;res<nb_client;res++){    // utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
+          if (sock_tab[res]!=c_sock){       // ne l'affiche pas à l'expéditeur
             writeline(sock_tab[res], nick, buffer, BUFFER_SIZE);
           }
         }
@@ -163,43 +169,49 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         break;
 
       case LEAVE :
-        format_nick(buffer);
-        separate(buffer);
+        format_nick(buffer);  // pour utiliser separate
+        separate(buffer);     // enlève la commande
+
         res = remove_client_in_group(groups,c_sock,buffer);
         if (res==0){
-          buffer = strcat(buffer,"is not one of your channel anymore\n");
+          buffer = strcat(buffer," is not one of your channel anymore\n");
+          // on pourrait remettre l'active groupe par défault par exemple si c'était le même channel que active groupe que l'on quitte
+
           writeline(c_sock,"Server", buffer, BUFFER_SIZE);
           break;
         }
         if (res==10){
           printf("> Channel %s destroyed\n", buffer);
-          buffer = strcat(buffer,"is not one of your channel anymore, and the salln is destroyed\n");
+          // on pourrait remettre l'active groupe par défault par exemple si c'était le même channel que active groupe que l'on quitte
+          buffer = strcat(buffer," is not one of your channel anymore, and the channel is destroyed\n");
           writeline(c_sock,"Server", buffer, BUFFER_SIZE);
           remove_group(groups,buffer);
           break;
         }
-        buffer = strcat(buffer,"is not one of your channel, you can't leave it\n");
+        buffer = strcat(buffer," is not one of your channel\nUse /whois <your_pseudo> to see in wich channel you are");
         writeline(c_sock,"Server", buffer, BUFFER_SIZE);
         break;
 
       case CREATE :
-        format_nick(buffer);
-        separate(buffer);
+        format_nick(buffer);  // pour utiliser separate
+        separate(buffer);     // enlève la commande de buffer
+
         if (create_group(groups, buffer)==0){
           printf("> Channel %s created\n", buffer);
-          buffer = strcat(buffer," is created\n");
+          buffer = strcat(buffer," is now new channel\n");
           writeline(c_sock,"Server", buffer, BUFFER_SIZE);
 
           break;
         }
         printf("> Channel %s already exist\n", buffer);
-        buffer = strcat(buffer,"is already an existing channel\n");
+        buffer = strcat(buffer," is already an existing channel\n");
         writeline(c_sock,"Server", buffer, BUFFER_SIZE);
         break;
 
       case JOIN :
-        format_nick(buffer);  // pour utiliser separate
-        separate(buffer);
+        format_nick(buffer);  // pour utiliser separate (rajoute \0)pas sure que ce soit utile en réalité, en tout cas on peut suremnt mieux faire
+        separate(buffer);     // enlève la commande de buffer
+
         res = add_client_in_group( clients, groups, c_sock, buffer);
         if (res == -1){
           buffer = strcat(buffer," is not an existing channel\n");
@@ -217,8 +229,9 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
 
       case ACTIVE :
         format_nick(buffer);  // pour utiliser separate
-        get_client_by_fd( *clients, &client, c_sock);
-        separate(buffer);
+        separate(buffer);     // enlève la commande de buffer
+
+        get_client_by_fd( *clients, &client, c_sock);     // get the struct client of the client
         res = client_is_in_group( groups,  c_sock, buffer);
 
         if (res == -1){
@@ -237,16 +250,16 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         break;
 
       case MSGW :
-        format_nick(buffer);  // problème pour obtenir uniquement le pseudo sans le message
-        separate(buffer);
-        get_name_in_command( nickw, buffer);
+        format_nick(buffer);  // pour utiliser separate
+        separate(buffer);     // pour enlever la commande
+        get_name_in_command( nickw, buffer);  // pour obtenir le nom (pourrait plus ou moin être utilise pour obtenir la commande)
         w_sock = get_fd_client_by_name(*clients,nickw ); // new function in list.c
         if (w_sock == -1){
           writeline(c_sock,"Server", "This user does not exist, use /who to see all the user connected\n", BUFFER_SIZE);
           break;
         }
         separate(buffer);
-        writeline(w_sock,nick, buffer, BUFFER_SIZE); // problème pour afficher le user qui envoie le message
+        writeline(w_sock,nick, buffer, BUFFER_SIZE);
         break;
 
       case MSGALL :
@@ -255,8 +268,8 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         nb_client=nb_client_in_list(*clients);
         memset(sock_tab,0,20);
         res = get_fd_client(*clients,sock_tab); // rempli un tableau d'entier avec tous les fd des clients
-        if (res == -1){// ça n'arrivera plus ou moins jamais
-          writeline(c_sock,"Server", "There none client connect to the server\n", BUFFER_SIZE);
+        if (res == 1){// ça n'arrivera plus ou moins jamais
+          writeline(c_sock,"Server", "You are the unique user of the Server\n", BUFFER_SIZE);
           break;
         }
         for (res=0;res<nb_client;res++){// utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai

@@ -32,7 +32,7 @@ int get_client_by_nick(struct list * clients, struct client ** client, char nick
   return -1; // il existe pas
 }
 
-void format_nick(char buffer[]){ //internal function to make sur nickname is formatted properly (mainly to remove trailing returnline)
+void format_nick(char buffer[]){ //(internal) function to make sur nickname is formatted properly (mainly to remove trailing returnline)
   int i=0;
   while(i<BUFFER_SIZE-1 && buffer[i]!='\n'){
     i++;
@@ -66,7 +66,7 @@ int get_fd_client_by_name(struct list *clients, char nick[]){
     return -1;
 
   while (current != NULL){
-    if(current->client->hasNick && strcmp(current->client->nickname, nick)==0){ // il faudrait connaître la longueur du nom
+    if(current->client->hasNick && strcmp(current->client->nickname, nick)==0){
       return current->client->fd;
     }
     //sinon on parcour la liste
@@ -75,7 +75,7 @@ int get_fd_client_by_name(struct list *clients, char nick[]){
   return -1; // il existe pas
 }
 
-int get_fd_client(struct list *clients, int fd[]){
+int get_fd_client(struct list *clients, int fd[]){  // return the fd of all the client in the linked list
   struct list * current = clients;
   int i =0;
   if(current == NULL)
@@ -91,11 +91,11 @@ int get_fd_client(struct list *clients, int fd[]){
   return i; // renvoie le nombre de client
 }
 
-int nb_client_in_list(struct list *clients){
+int nb_client_in_list(struct list *clients){  // return the numver of client in the linked list
   struct list * current = clients;
   int i =0;
   if(current == NULL)
-    return -1; // il n'y pas pas de client
+    return i; // il n'y pas pas de client
 
   while (current != NULL){
     i++;
@@ -107,7 +107,7 @@ int nb_client_in_list(struct list *clients){
 
 
 
-int exists(struct list * clients, char nick[]){
+int exists(struct list * clients, char nick[]){ // return if the client is on the linked list or not
   struct list * current = clients;
   if(current == NULL)
     return 0;
@@ -216,7 +216,6 @@ int set_nick(struct list * clients, int fd, char nick[]){
       printf("ERROR unvalid nick name");
       return 3;
     }
-    i++;
   }
   strcpy(client->nickname, nick);
   //free(client);

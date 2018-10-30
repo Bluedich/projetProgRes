@@ -66,37 +66,36 @@ int create_message(char nick[], char * buffer[]){
   }
   temp[to_send+nick_len+6]=(*buffer)[to_send+1];
 
-  //buffer = &temp; malheureusemnt ne fonctionne pas visiblement on fait carctere par caractere alors, ce qui est suremetn normal vu que temp n'existe pas en dehors de la fonction
   to_send=strlen(temp);
   i=0;
-//  printf("buffer avant ? %s\n",*buffer);
-//  printf("buffer qu'il faudraoit ? %s\n",temp);
-//  memset(buffer, 0, BUFFER_SIZE);
-  *buffer = malloc(sizeof(char)*BUFFER_SIZE);
-  //printf("je doit envoyer quoi ? %d\n",to_send);
-  //printf("buffer après ? %s\n",*buffer);
 
+  *buffer = malloc(sizeof(char)*BUFFER_SIZE);
   strcpy(*buffer,temp);
-//  printf("buffer encore après ? %s\n",*buffer);
-//  printf("je doit envoyer quoi ? %d\n",to_send);
-//  printf("je devrait pourtant pourovir sortir %s\n",*buffer);
-//  printf("prout\n");
 
 
   return 0;
 }
 
-int writeline(int fd_rcv,char nick[], char * buffer, int maxlen){
+int writeline(int fd_rcv,char nick[], char * buffer, int maxlen){ /* l'idée que j'ai pour afficher le nom du groupe,
+est d'ajouter un argument à writeline,
+un ENUM qui dit soit que l'on parle dans un groupe soit
+que l'on parle en whisper ou broadcast*/
   assert(buffer);
   assert(nick);
   int i=0;
   int to_send=0;
   int sent =0;
+  // Si j'ai eu besoin de faire ce qui est dessous, c'est parceque sinon, fallair que je mette de sperate pas beau dans get command
+  // et que le Ctrl + C marchait plus à cause de mon create message qui se faisait. Ce serait mieux de faire un ENUM que ça
+  // surtout qu'on pourrait prendre un peu mieux en compte le truck du groupe
+  if (strlen(nick)>0){  // version vraiment pas beau de dire que je fait ça que si j'envoi un message vers les clients
+    create_message(nick,&buffer); /* ça ne modife pas toujours le buffer selon comment on implemente la fonction,
+sans que je comprenne trop. Visiblement, l'implementation actuelle est ok :*/
+  }
 
-  create_message(nick,&buffer); // ça ne modife pas le buffer :/
   to_send = strlen(buffer);
-//  printf("lerreur ce fait la ?");
-  while(to_send>0 || i<1000){ //try maximum of 1000 times
+  //  printf("lerreur ce fait la ?,%s\n",buffer);
+  while(to_send>0 || i<1000){ //try maximum of 1000 times // la j'ai changé, avant la condtion était i>1000
     sent=write(fd_rcv, buffer, to_send);
     if (sent==-1)
       error("ERROR writing line");
