@@ -2,12 +2,15 @@
 #define _LIST_H_
 
 struct list;
+//struct client; Enfait c'est pire de mettre add_existing_client_to_list dans list.c parceque ça fait ajouter struct client ici
 
 //give the fd of the client with name name
 int get_fd_client_by_name(struct list *clients, char buffer[]);
 //initialises a client structure and adds it to the linked list passed as argument
 int add_client_to_list(struct list ** clients, int fd, char ip[], int port);
 
+// add an existing client to a linked list clients (mainly usefull for a linked list of struct group)
+//int add_existing_client_to_list(struct list ** clients, struct client * client);
 
 //fill fd[] with all the fd of all the clients in the list in argument
 int get_fd_client(struct list *clients, int fd[]);

@@ -20,6 +20,10 @@ struct list{  // anomali, normalement je devrais pas en avoir besoin moi je pens
 };
 
 
+//////////
+//Tout ce qui est plus haut ne devrait pas être là mais dans list.c
+//////
+
 // add an existing client to a linked list clients (mainly usefull for a linked list of struct group)
 int add_existing_client_to_list(struct list ** clients, struct client * client){  // doit être mis dans list.c
   assert(clients);
@@ -31,10 +35,16 @@ int add_existing_client_to_list(struct list ** clients, struct client * client){
   new_start->next = *clients;
   *clients=new_start;
 }
-//////////
-//Tout ce qui est plus haut ne devrait pas être là mais dans list.c
-//////
+
+/*
+struct client_fd{
+  int fd;
+  struct client_fd * next;
+};
+*/
+// je pensais que j'avais trouver un truck pas trop mal, mais non sans linked lsit chainée générique faut tout réécrire
 struct group{
+  //struct client_fd * clients;
   struct list * clients;
   char name[512];
 };
@@ -77,15 +87,6 @@ int group_exist(struct listg ** groups, char name[]){ // jepense que cette fonct
   return -1; // there is no this group
 }
 
-int get_client_fd_in_group(struct listg ** groups, char name, int *fd[]){ // surement inutilie
-  assert(groups);
-  struct group * group = (struct group *) malloc(sizeof(struct group));
-  get_group_by_name(groups,  &group,  &name);  // on obtient le bon groupe
-  // enfait je l'ai fait dans list.c en gros
-
-  return 0;
-}
-
 int create_group(struct listg ** groups, char name[]){
   assert(groups);
   struct listg * new_start = (struct listg *) malloc(sizeof(struct listg));
@@ -107,11 +108,6 @@ int create_group(struct listg ** groups, char name[]){
   return 0;
 }
 
-int add_client_to_group(struct group * group, struct client * client){// Ne sert à rien
-  assert(client);
-  assert(group);
-  add_existing_client_to_list(&(group->clients), client);
-}
 
 int add_client_in_group(struct list ** clients, struct listg ** groups, int c_sock, char name[]){
   struct listg * before = *groups;
@@ -203,15 +199,6 @@ int client_is_in_group(struct listg ** groups, int c_sock, char name[]){ // test
 
 }
 
-
-int remove_client_to_group(struct group * group, int fd){ // ne sert à rien
-  assert(group);
-  int err = remove_client(&(group->clients), fd);
-  if (group->clients == NULL){
-    return 10;                // code de retour signifiant qu'il faut supprimer le group
-  }
-  return err;                 // code de retour de remove_client
-}
 
 int remove_client_in_group(struct listg ** groups, int fd, char name[]){
   struct listg * before = *groups;

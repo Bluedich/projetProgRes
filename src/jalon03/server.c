@@ -148,12 +148,12 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         memset(sock_tab,0,20);
         res = get_fd_client(group->clients,sock_tab); // rempli un tableau d'entier avec tous les fd des clients
         if (res == -1){               // ça n'arrivera plus ou moins jamais
-          writeline(c_sock,"Server","", "You are the unique user of the group\n", BUFFER_SIZE);
+          writeline(c_sock,"Server",client->activegroup, "You are the unique user of the group\n", BUFFER_SIZE);
           break;
         }
         for (res=0;res<nb_client;res++){    // utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
           if (sock_tab[res]!=c_sock){       // ne l'affiche pas à l'expéditeur
-            writeline(sock_tab[res], nick,"", buffer, BUFFER_SIZE);
+            writeline(sock_tab[res], nick,client->activegroup, buffer, BUFFER_SIZE);
           }
         }
         break;

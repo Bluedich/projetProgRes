@@ -16,6 +16,8 @@ struct list{
   struct list * next;
 };
 
+
+
 int get_client_by_nick(struct list * clients, struct client ** client, char nick[]){ //internal function
   struct list * current = clients;
   if(current == NULL)
@@ -39,6 +41,18 @@ void format_nick(char buffer[]){ //(internal) function to make sur nickname is f
   }
   buffer[i]='\0';
 }
+/*
+int add_existing_client_to_list(struct list ** clients, struct client * client){  // doit être mis dans list.c
+  assert(clients);
+  struct list * new_start = (struct list *) malloc(sizeof(struct list));
+  assert(client);
+  assert(new_start);
+
+  new_start->client = client;
+  new_start->next = *clients;
+  *clients=new_start;
+}
+*/
 
 int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //internal function
   struct list * current = clients;
