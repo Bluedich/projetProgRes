@@ -20,7 +20,7 @@ struct list{  // anomali, normalement je devrais pas en avoir besoin moi je pens
 };
 
 
-// add an existing client to a linked list clients (mainly usefull for a linked list of strct group)
+// add an existing client to a linked list clients (mainly usefull for a linked list of struct group)
 int add_existing_client_to_list(struct list ** clients, struct client * client){  // doit être mis dans list.c
   assert(clients);
   struct list * new_start = (struct list *) malloc(sizeof(struct list));
@@ -113,7 +113,7 @@ int add_client_to_group(struct group * group, struct client * client){// Ne sert
   add_existing_client_to_list(&(group->clients), client);
 }
 
-int add_client_in_group(struct list ** clients, struct listg ** groups, int c_sock, char name[]){ // il manque un test pour savoir si le client existe dejà dans la liste
+int add_client_in_group(struct list ** clients, struct listg ** groups, int c_sock, char name[]){
   struct listg * before = *groups;
   struct client * client = (struct client *) malloc(sizeof(struct client));
   get_client_by_fd( *clients, &client, c_sock);
@@ -125,7 +125,7 @@ int add_client_in_group(struct list ** clients, struct listg ** groups, int c_so
     return -1;
   }
   if( strcmp(before->group->name,name)==0){ // c'est le groupe dans lequel on veut ajouter le client
-    if (get_client_by_fd((before->group->clients), NULL, c_sock)==0){
+    if (get_client_by_fd((before->group->clients), NULL, c_sock)==0){ // test si le client est déjà dans la liste
       return 1; // il est déjà dans la liste
     }
     add_existing_client_to_list(&(before->group->clients), client);

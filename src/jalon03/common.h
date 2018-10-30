@@ -18,7 +18,7 @@ void error(const char *msg);
 
 int readline(int fd, char * buffer, int maxlen);
 
-int writeline(int fd_rcv,char * nick, char * buffer, int maxlen);
+int writeline(int fd_rcv,char * nick,char * group, char * buffer, int maxlen);
 
 int separate( char buffer[]);
 

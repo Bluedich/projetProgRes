@@ -47,7 +47,7 @@ int get_name_in_command( char  buffer_out[], char  buffer_in[]){
 }
 
 
-int create_message(char nick[], char * buffer[]){
+int add_nick_to_message(char nick[], char * buffer[]){
   char * temp = malloc(sizeof(char)*BUFFER_SIZE);
   //strcpy(temp,buffer);
   memset(temp, 0, BUFFER_SIZE);
@@ -65,18 +65,14 @@ int create_message(char nick[], char * buffer[]){
     temp[i+nick_len+5]=(*buffer)[i];
   }
   temp[to_send+nick_len+6]=(*buffer)[to_send+1];
-
   to_send=strlen(temp);
   i=0;
-
   *buffer = malloc(sizeof(char)*BUFFER_SIZE);
   strcpy(*buffer,temp);
-
-
   return 0;
 }
 
-int writeline(int fd_rcv,char nick[], char * buffer, int maxlen){ /* l'idée que j'ai pour afficher le nom du groupe,
+int writeline(int fd_rcv,char nick[],char group[], char * buffer, int maxlen){ /* l'idée que j'ai pour afficher le nom du groupe,
 est d'ajouter un argument à writeline,
 un ENUM qui dit soit que l'on parle dans un groupe soit
 que l'on parle en whisper ou broadcast*/
@@ -89,7 +85,11 @@ que l'on parle en whisper ou broadcast*/
   // et que le Ctrl + C marchait plus à cause de mon create message qui se faisait. Ce serait mieux de faire un ENUM que ça
   // surtout qu'on pourrait prendre un peu mieux en compte le truck du groupe
   if (strlen(nick)>0){  // version vraiment pas beau de dire que je fait ça que si j'envoi un message vers les clients
-    create_message(nick,&buffer); /* ça ne modife pas toujours le buffer selon comment on implemente la fonction,
+    add_nick_to_message(nick,&buffer); /* ça ne modife pas toujours le buffer selon comment on implemente la fonction,
+sans que je comprenne trop. Visiblement, l'implementation actuelle est ok :*/
+  }
+  if (strlen(group)>0){  // version vraiment pas beau de dire que je fait ça que si j'envoi un message vers les clients
+    add_nick_to_message(group,&buffer); /* ça ne modife pas toujours le buffer selon comment on implemente la fonction,
 sans que je comprenne trop. Visiblement, l'implementation actuelle est ok :*/
   }
 
