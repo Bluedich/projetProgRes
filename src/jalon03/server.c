@@ -88,9 +88,6 @@ S_CMD get_command(char * buffer, int s_read){
   if(strncmp(buffer,"/join ",6)==0 && strlen(buffer)>7)
     return JOIN;  // envoi un message en broadcast
 
-  if(strncmp(buffer,"/active ",8)==0 && strlen(buffer)>9)
-    return ACTIVE;  // active a group (ce qu'il fait que l'on peut parler dans ce groupe sans commande)
-
   if(strncmp(buffer,"/msg ",5)==0 && strlen(buffer)>6)
     return MSGW;  // whisper to a user
 
@@ -171,12 +168,12 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
       case LEAVE :
         format_nick(buffer);  // pour utiliser separate
         separate(buffer);     // enlève la commande
-
+        get_client_by_fd( *clients, &client, c_sock);     // get the struct client of the client
         res = remove_client_in_group(groups,c_sock,buffer);
         if (res==0){
           buffer = strcat(buffer," is not one of your channel anymore\n");
           // on pourrait remettre l'active groupe par défault par exemple si c'était le même channel que active groupe que l'on quitte
-
+          memset(client->activegroup,0,BUFFER_SIZE);
           writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
           break;
         }
@@ -184,11 +181,12 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           printf("> Channel %s destroyed\n", buffer);
           // on pourrait remettre l'active groupe par défault par exemple si c'était le même channel que active groupe que l'on quitte
           buffer = strcat(buffer," is not one of your channel anymore, and the channel is destroyed\n");
+          memset(client->activegroup,0,BUFFER_SIZE);
           writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
           remove_group(groups,buffer);
           break;
         }
-        buffer = strcat(buffer," is not one of your channel\nUse /whois <your_pseudo> to see in wich channel you are");
+        buffer = strcat(buffer," is not one of your channel\nUse /whois <your_pseudo> to see in wich channel you are\n");
         writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
         break;
 
@@ -212,6 +210,8 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         format_nick(buffer);  // pour utiliser separate (rajoute \0)pas sure que ce soit utile en réalité, en tout cas on peut suremnt mieux faire
         separate(buffer);     // enlève la commande de buffer
 
+        get_client_by_fd( *clients, &client, c_sock);     // get the struct client of the client
+        printf(">  (%s) \n", client->nickname);
         res = add_client_in_group( clients, groups, c_sock, buffer);
         if (res == -1){
           buffer = strcat(buffer," is not an existing channel\n");
@@ -219,33 +219,13 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           break;
         }
         if (res == 1){
-          buffer = strcat(buffer," is already one of your channel\n");
-          writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
-          break;
-        }
-        buffer = strcat(buffer," is now one of you channel\n");
-        writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
-        break;
-
-      case ACTIVE :
-        format_nick(buffer);  // pour utiliser separate
-        separate(buffer);     // enlève la commande de buffer
-
-        get_client_by_fd( *clients, &client, c_sock);     // get the struct client of the client
-        res = client_is_in_group( groups,  c_sock, buffer);
-
-        if (res == -1){
-          buffer = strcat(buffer," is not an existing channel\nYou can use /create <channel> to create a new channel\n");
-          writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
-          break;
-        }
-        if (res == 1){
           strcpy(client->activegroup,buffer);
-          buffer = strcat(buffer," is now one your active channel\n");
+          buffer = strcat(buffer," is your channel\n");
           writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
           break;
         }
-        buffer = strcat(buffer," is not one of your channel\nUse /join <channel> to join this channel\n");
+        strcpy(client->activegroup,buffer);
+        buffer = strcat(buffer," is now your channel\n");
         writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
         break;
 

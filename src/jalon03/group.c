@@ -206,7 +206,7 @@ int remove_client_in_group(struct listg ** groups, int fd, char name[]){
     printf("ERROR trying leave the group : there no existing group\nYou can create one with /group <groupname> \n");
     return -1;  // the group does not exist
   }
-  if( strcmp(before->group->name,name)){
+  if( strcmp(before->group->name,name)==0){
     remove_client(&(before->group->clients), fd);
     if (before->group->clients == NULL){
       return 10;                // code de retour signifiant qu'il faut supprimer le group
@@ -220,7 +220,7 @@ int remove_client_in_group(struct listg ** groups, int fd, char name[]){
     return -1;    // the group does not exist
 
   while (current->next != NULL){
-    if(strcmp(current->group->name,name)){ // c'est lui qu'on supprime
+    if(strcmp(current->group->name,name)==0){ // c'est lui qu'on supprime
       remove_client(&(current->group->clients), fd);
       if (current->group->clients == NULL){
         return 10;                // code de retour signifiant qu'il faut supprimer le group
@@ -231,7 +231,7 @@ int remove_client_in_group(struct listg ** groups, int fd, char name[]){
     current = current->next;
     before = before->next;
   }
-  if(strcmp(current->group->name,name)){ // c'est lui qu'on supprime
+  if(strcmp(current->group->name,name)==0){ // c'est lui qu'on supprime
     remove_client(&(current->group->clients), fd);
     if (current->group->clients == NULL){
       return 10;                // code de retour signifiant qu'il faut supprimer le group
