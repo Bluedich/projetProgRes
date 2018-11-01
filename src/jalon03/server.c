@@ -116,6 +116,8 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     memset(nick, 0, BUFFER_SIZE);
     char nickw[BUFFER_SIZE];
     memset(nickw, 0, BUFFER_SIZE);
+    char msg[BUFFER_SIZE];
+    memset(nickw, 0, BUFFER_SIZE);
     struct client * client=NULL;
     struct group * group=NULL;
     int c_sock = fd->fd;// sock client
@@ -171,23 +173,23 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         get_client_by_fd( *clients, &client, c_sock);     // get the struct client of the client
         res = remove_client_in_group(groups,c_sock,buffer);
         if (res==0){
-          buffer = strcat(buffer," is not one of your channel anymore\n");
-          // on pourrait remettre l'active groupe par défault par exemple si c'était le même channel que active groupe que l'on quitte
           memset(client->activegroup,0,BUFFER_SIZE);
-          writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
+
+          sprintf(msg,"You have quit the channel '%s'.\n",buffer);
+          writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
         if (res==10){
-          printf("> Channel %s destroyed\n", buffer);
-          // on pourrait remettre l'active groupe par défault par exemple si c'était le même channel que active groupe que l'on quitte
-          buffer = strcat(buffer," is not one of your channel anymore, and the channel is destroyed\n");
-          memset(client->activegroup,0,BUFFER_SIZE);
-          writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
           remove_group(groups,buffer);
+          printf("> Channel %s destroyed\n", buffer);
+          memset(client->activegroup,0,BUFFER_SIZE);
+
+          sprintf(msg,"You have quit the channel '%s' and the channel is destroyed.\n",buffer);
+          writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
-        buffer = strcat(buffer," is not one of your channel\nUse /whois <your_pseudo> to see in wich channel you are\n");
-        writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
+        sprintf(msg,"You are not in the group '%s', you can't leave it.\n",buffer);
+        writeline(c_sock,"Server","", msg, BUFFER_SIZE);
         break;
 
       case CREATE :
@@ -196,14 +198,14 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
 
         if (create_group(groups, buffer)==0){
           printf("> Channel %s created\n", buffer);
-          buffer = strcat(buffer," is now new channel\n");
-          writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
+          sprintf(msg,"You have create the channel '%s'.\n",buffer);
+          writeline(c_sock,"Server","", msg, BUFFER_SIZE);
 
           break;
         }
         printf("> Channel %s already exist\n", buffer);
-        buffer = strcat(buffer," is already an existing channel\n");
-        writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
+        sprintf(msg,"Channel %s already exist\n", buffer);
+        writeline(c_sock,"Server","", msg, BUFFER_SIZE);
         break;
 
       case JOIN :
@@ -213,20 +215,20 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         get_client_by_fd( *clients, &client, c_sock);     // get the struct client of the client
         printf(">  (%s) \n", client->nickname);
         res = add_client_in_group( clients, groups, c_sock, buffer);
-        if (res == -1){
-          buffer = strcat(buffer," is not an existing channel\n");
-          writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
+        if (res == -1){;
+          sprintf(msg,"Channel %s doesn't exist\n", buffer);
+          writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
         if (res == 1){
-          strcpy(client->activegroup,buffer);
-          buffer = strcat(buffer," is your channel\n");
-          writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
+          //strcpy(client->activegroup,buffer);
+          sprintf(msg," You are already in the channel '%s'\n",buffer);
+          writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
         strcpy(client->activegroup,buffer);
-        buffer = strcat(buffer," is now your channel\n");
-        writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
+        sprintf(msg,"You have joined the channel '%s'\n",buffer);
+        writeline(c_sock,"Server","", msg, BUFFER_SIZE);
         break;
 
       case MSGW :
@@ -254,6 +256,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         }
         for (res=0;res<nb_client;res++){// utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
           if (sock_tab[res]!=c_sock){// ne l'affiche pas à l'expéditeur
+          sprintf(msg,"%s",buffer);
             writeline(sock_tab[res], nick,"", buffer, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
           }
         }

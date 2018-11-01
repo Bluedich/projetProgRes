@@ -84,12 +84,11 @@ int writeline(int fd_rcv,char nick[],char group[], char * buffer, int maxlen){
   int sent =0;
 
   sprintf(temp,"%s",buffer);
-  if (strlen(group)>0){  // version vraiment pas beau de dire que je fait ça que si j'envoi un message vers les clients
+  if (strlen(group)>0){ 
     //add_nick_to_message(group,&buffer);
-    sprintf(temp,"[%s]> [%s]> %s",group, nick, buffer);
+    sprintf(temp,"[%s]> [%s]: %s",group, nick, buffer);
 }
-
-  if ( (strlen(nick)>0) && (strlen(group)==0) ){  // version vraiment pas beau de dire que je fait ça que si j'envoi un message vers les clients
+  if ( (strlen(nick)>0) && (strlen(group)==0) ){
     //add_nick_to_message(nick,&buffer);
     sprintf(temp,"[%s] : %s",nick,buffer);
   }
