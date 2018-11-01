@@ -46,7 +46,7 @@ int get_name_in_command( char  buffer_out[], char  buffer_in[]){
   strncpy(buffer_out+i,"\0",1);
 }
 
-
+/*
 int add_nick_to_message(char nick[], char * buffer[]){
   char * temp = malloc(sizeof(char)*BUFFER_SIZE);
   //strcpy(temp,buffer);
@@ -71,32 +71,33 @@ int add_nick_to_message(char nick[], char * buffer[]){
   strcpy(*buffer,temp);
   return 0;
 }
+*/
 
-int writeline(int fd_rcv,char nick[],char group[], char * buffer, int maxlen){ /* l'idée que j'ai pour afficher le nom du groupe,
-est d'ajouter un argument à writeline,
-un ENUM qui dit soit que l'on parle dans un groupe soit
-que l'on parle en whisper ou broadcast*/
+int writeline(int fd_rcv,char nick[],char group[], char * buffer, int maxlen){
   assert(buffer);
+  char * temp = malloc(sizeof(char)*BUFFER_SIZE);
+  //strcpy(temp,buffer);
+  memset(temp, 0, BUFFER_SIZE);
   assert(nick);
   int i=0;
   int to_send=0;
   int sent =0;
-  // Si j'ai eu besoin de faire ce qui est dessous, c'est parceque sinon, fallair que je mette de sperate pas beau dans get command
-  // et que le Ctrl + C marchait plus à cause de mon create message qui se faisait. Ce serait mieux de faire un ENUM que ça
-  // surtout qu'on pourrait prendre un peu mieux en compte le truck du groupe
-  if (strlen(nick)>0){  // version vraiment pas beau de dire que je fait ça que si j'envoi un message vers les clients
-    add_nick_to_message(nick,&buffer); /* ça ne modife pas toujours le buffer selon comment on implemente la fonction,
-sans que je comprenne trop. Visiblement, l'implementation actuelle est ok :*/
-  }
+
+  sprintf(temp,"%s",buffer);
   if (strlen(group)>0){  // version vraiment pas beau de dire que je fait ça que si j'envoi un message vers les clients
-    add_nick_to_message(group,&buffer); /* ça ne modife pas toujours le buffer selon comment on implemente la fonction,
-sans que je comprenne trop. Visiblement, l'implementation actuelle est ok :*/
+    //add_nick_to_message(group,&buffer);
+    sprintf(temp,"[%s]> [%s]> %s",group, nick, buffer);
+}
+
+  if ( (strlen(nick)>0) && (strlen(group)==0) ){  // version vraiment pas beau de dire que je fait ça que si j'envoi un message vers les clients
+    //add_nick_to_message(nick,&buffer);
+    sprintf(temp,"[%s] : %s",nick,buffer);
   }
 
-  to_send = strlen(buffer);
+  to_send = strlen(temp);
   //  printf("lerreur ce fait la ?,%s\n",buffer);
   while(to_send>0 || i<1000){ //try maximum of 1000 times // la j'ai changé, avant la condtion était i>1000
-    sent=write(fd_rcv, buffer, to_send);
+    sent=write(fd_rcv, temp, to_send);
     if (sent==-1)
       error("ERROR writing line");
     to_send-=sent;

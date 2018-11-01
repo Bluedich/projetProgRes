@@ -203,7 +203,7 @@ int get_info(struct list * clients, char buffer[], char nick[]){
   format_nick(nickname);
   get_client_by_nick(clients, &client, nickname);
   memset(buffer, 0, BUFFER_SIZE);
-  sprintf(buffer, "%s connected since %s with IP address %s and port number %d is on the group %s\n", client->nickname, client->con_date, client->ip_addr, client->port_nb, client->activegroup);
+  sprintf(buffer, "%s connected since %s with IP address %s and port number %d \n", client->nickname, client->con_date, client->ip_addr, client->port_nb);
   return 0;
 }
 
