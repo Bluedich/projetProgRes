@@ -3,7 +3,7 @@
 
 struct client{
   char nickname[MAX_NICK_SIZE];
-  char activegroup[MAX_NICK_SIZE];
+  char group[MAX_NICK_SIZE];
   char ip_addr[17];
   int port_nb;
   int hasNick;
@@ -203,7 +203,12 @@ int get_info(struct list * clients, char buffer[], char nick[]){
   format_nick(nickname);
   get_client_by_nick(clients, &client, nickname);
   memset(buffer, 0, BUFFER_SIZE);
-  sprintf(buffer, "%s connected since %s with IP address %s and port number %d \n", client->nickname, client->con_date, client->ip_addr, client->port_nb);
+  if (strlen(client->group)==0){
+      sprintf(buffer, "%s connected since %s with IP address %s and port number %d \n", client->nickname, client->con_date, client->ip_addr, client->port_nb);
+}
+else {
+    sprintf(buffer, "%s is in the channel %s\nConnected since %s with IP address %s and port number %d \n", client->nickname, client->group, client->con_date, client->ip_addr, client->port_nb);
+}
   return 0;
 }
 

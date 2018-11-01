@@ -129,9 +129,10 @@ int add_client_in_group(struct list ** clients, struct listg ** groups, int c_so
   }
 
   struct listg * current = before->next;
-  if(current == NULL)
-  printf("ERROR trying BBjoin the group %s : no group with this tag\n",name);
+  if(current == NULL){
+    printf("ERROR trying BBjoin the group %s : no group with this tag\n",name);
     return -1; // there is no this group
+  }
 
   while (current->next != NULL){
     if(strcmp(current->group->name,name)==0){ // c'est le groupe dans lequel on veut ajouter le client
@@ -215,10 +216,10 @@ int remove_client_in_group(struct listg ** groups, int fd, char name[]){
   }
 
   struct listg * current = before->next;
-  if(current == NULL)
-  printf("ERROR trying leave the group %s : no group with this tag\n",name);
+  if(current == NULL){
+    printf("ERROR trying leave the group %s : no group with this tag\n",name);
     return -1;    // the group does not exist
-
+}
   while (current->next != NULL){
     if(strcmp(current->group->name,name)==0){ // c'est lui qu'on supprime
       remove_client(&(current->group->clients), fd);
