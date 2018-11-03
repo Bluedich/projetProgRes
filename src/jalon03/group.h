@@ -2,7 +2,6 @@
 #define _LIST_H_
 
 struct listg;
-struct list;
 struct group;
 
 //initialises a client structure and adds it to the linked list passed as argument
@@ -18,7 +17,7 @@ int get_group_by_name(struct listg ** groups, struct group ** group, char name[]
 int group_exist(struct listg ** groups, char name[]);
 
 //add client to the group with the name name
-int add_client_in_group(struct list ** clients, struct listg * groups, struct client * client, char name[]);
+int add_client_in_group(struct listg * groups, struct client * client, char name[]);
 
 //return if the client is in the group or not
 int client_is_in_group(struct listg ** groups, int c_sock, char name[]);
@@ -30,7 +29,7 @@ int remove_group(struct listg ** groups, char name);
 int print_list(struct list * clients);
 
 //remove client with fd fd, in the group with name name
-int remove_client_in_group(struct listg * groups, int fd, char name[]);
+int remove_client_in_group(struct listg * groups, int c_sock, char name[]);
 
 //returns 1 if client exists and 0 if not
 int exists(struct list * clients, char nick[]);
