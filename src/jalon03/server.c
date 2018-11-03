@@ -114,6 +114,8 @@ S_CMD get_command(char * buffer, int s_read){
 int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd, struct listg ** groups){
     char nick[BUFFER_SIZE];
     memset(nick, 0, BUFFER_SIZE);
+    char client_group[BUFFER_SIZE];
+    memset(client_group, 0, BUFFER_SIZE);
     char nickw[BUFFER_SIZE];
     memset(nickw, 0, BUFFER_SIZE);
     char msg[BUFFER_SIZE];
@@ -126,6 +128,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     int nb_client;      // number of client conected to the server
     int sock_tab[20];   //array wich will contain all the sock of all the clients in a group
     int hasNick = has_nick(*clients, nick, c_sock);
+    int hasGroup = has_group(*clients,client_group,c_sock);
     format_nick(nick);
     if(!hasNick && cmd!=NICK && cmd!=QUIT){ //Not allowed to talk until a nickname is chosen
       writeline(c_sock,"Server","", "Please use /nick <your_pseudo> to login.\n", BUFFER_SIZE);
@@ -136,13 +139,12 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
       case MSG :  // on parle dans le groupe actif
         //format_nick(buffer);
 
-        get_client_by_fd( *clients, &client, c_sock);
-        if (strlen(client->group)==0){
+        if (strlen(client_group)==0){
           writeline(c_sock,"Server","", "You are not in a channel\n Plese use /join to join a channel\n", BUFFER_SIZE);
           break;
         }
 /**/
-        res = get_group_by_name(groups, &group, client->group);
+        res = get_group_by_name(groups, &group, client_group);
         if (res == -1){
           writeline(c_sock,"Server","", "You are in a channel who does not exsit\nGROS PROBLEME\n", BUFFER_SIZE);
           break;
@@ -150,7 +152,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
 
         for (res=0;res<MAX_CL;res++){    // utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
           if (group->fd[res]!=c_sock && group->fd[res]!=-1 /*&& group->fd[res]!=0*/){       // ne l'affiche pas à l'expéditeur et y'a un bug group->fd vaut souvent 0 visiblement
-            writeline(group->fd[res], nick,client->group, buffer, BUFFER_SIZE);
+            writeline(group->fd[res], nick,client_group, buffer, BUFFER_SIZE);
           }
         }
         break;
@@ -166,43 +168,36 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         format_nick(buffer);  // pour utiliser separate
         separate(buffer);     // enlève la commande
 
-        get_client_by_fd( *clients, &client, c_sock);     // get the struct client of the client
-
-        if (strlen(client->group)==0){
-          printf("You are not in any channel, you can't leave the channel'%s'.\n",buffer);
-          sprintf(msg,"You are not in any channel, you can't leave the channel'%s'.\n",buffer);
+        if (hasGroup==0){
+          printf("Client '%s' try to leave the channel '%s' but isn't in any channel.\n",nick,buffer);
+          sprintf(msg,"You are not in any channel.\n");
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
-        }/*
-        if (strcmp(client->group,buffer)!=0){
-          printf("You are not in the group '%s', you can't leave it.\n",buffer);
-          sprintf(msg,"You are not in the group '%s', you can't leave it.\n",buffer);
-          writeline(c_sock,"Server","", msg, BUFFER_SIZE);
-          break;
-        }*/
+        }
         res = remove_client_in_group(groups,c_sock,buffer);
         if (res==-1){ //normalement n'arrive pas, c'est pris dans la conditiond'avant
+          printf("> Client '%s' try to leave the channel '%s' but this channel does not exist\n",nick,buffer);
           sprintf(msg,"The group does not exist '%s', you can't leave it.\n",buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
         if (res==-2){ //normalement n'arrive pas, c'est pris dans la conditiond'avant
-          sprintf(msg,"You are not in the group '%s', you can't leave it.\n",buffer);
+          printf("> Client '%s' try to leave the channel '%s' but he is not in this channel\n",nick,buffer);
+          sprintf(msg,"You are not in the channel '%s', you can't leave it.\n",buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
         if (res==0){
-          sprintf(client->group,"");
-
+          change_group(*clients,"",c_sock);
+          printf("> Client '%s' has left the channel '%s'\n",nick,buffer);
           sprintf(msg,"You have quit the channel '%s'.\n",buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
         if (res==10){
           remove_group(groups,buffer);
-          printf("> Channel %s destroyed\n", buffer);
-          sprintf(client->group,"");
-
+          printf("> Client '%s' has left the channel '%s' and Channel '%s' destroyed\n",nick,buffer, buffer);
+          change_group(*clients,"",c_sock);
           sprintf(msg,"You have quit the channel '%s' and the channel is destroyed.\n",buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
 
@@ -232,28 +227,11 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
 
         get_client_by_fd( *clients, &client, c_sock);     // get the struct client of the client
 
-        if( strlen(client->group)!=0 ){
-          sprintf(msg,"You're already in the channel '%s'. Please leave it before trying join the channel '%s'.\n",client->group,buffer);
+        if( hasGroup!=0 ){
+          sprintf(msg,"You're already in the channel '%s'. Please leave it before trying join the channel '%s'.\n",client_group,buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
-          /*
-          printf("Pour l'instant je suis dans le groupe '%s'",client->group);
-          if ( (strcmp(client->group,buffer)!=0) ){
-            w_sock = remove_client_in_group(groups,c_sock,client->group);
-            if (w_sock==0){
-              sprintf(msg,"You have quit the channel '%s'.\n",client->group);
-              writeline(c_sock,"Server","", msg, BUFFER_SIZE);
-              memset(client->group,0,BUFFER_SIZE);
-            }
-            if (w_sock==10){
-              remove_group(groups,buffer);
-              printf("> Channel %s destroyed\n", client->group);
-              sprintf(msg,"You have quit the channel '%s' and the channel is destroyed.\n",client->group);
-              writeline(c_sock,"Server","", msg, BUFFER_SIZE);
-              memset(client->group,0,BUFFER_SIZE);
-            }
-          }
-        */}
+}
         res = add_client_in_group( groups, c_sock, buffer);
 
         if (res == -2){;
@@ -267,15 +245,16 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           break;
         }
         if (res == -3){
-          strcpy(client->group,buffer);
+          change_group(*clients,buffer,c_sock);
           sprintf(msg," You are already in the channel '%s'\n",buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
-        strcpy(client->group,buffer);
-        sprintf(msg,"You have joined the channel '%s'\n",buffer);
-        writeline(c_sock,"Server","", msg, BUFFER_SIZE);
-        break;
+          change_group(*clients,buffer,c_sock);
+
+          sprintf(msg,"You have joined the channel '%s'\n",buffer);
+          writeline(c_sock,"Server","", msg, BUFFER_SIZE);
+          break;
 
       case MSGW :
         format_nick(buffer);  // pour utiliser separate

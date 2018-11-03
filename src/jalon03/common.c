@@ -46,33 +46,6 @@ int get_name_in_command( char  buffer_out[], char  buffer_in[]){
   strncpy(buffer_out+i,"\0",1);
 }
 
-/*
-int add_nick_to_message(char nick[], char * buffer[]){
-  char * temp = malloc(sizeof(char)*BUFFER_SIZE);
-  //strcpy(temp,buffer);
-  memset(temp, 0, BUFFER_SIZE);
-  int to_send = strlen(*buffer);
-  int sent;
-  int i=0;
-  int nick_len = strlen(nick);
-
-  strcat(temp,"[");
-  for (int i=0;i<nick_len;i++){
-    temp[i+1]=nick[i];
-  }
-  strcat(temp,"] : ");
-  for (int i=0;i<to_send;i++){
-    temp[i+nick_len+5]=(*buffer)[i];
-  }
-  temp[to_send+nick_len+6]=(*buffer)[to_send+1];
-  to_send=strlen(temp);
-  i=0;
-  *buffer = malloc(sizeof(char)*BUFFER_SIZE);
-  strcpy(*buffer,temp);
-  return 0;
-}
-*/
-
 int writeline(int fd_rcv,char nick[],char group[], char * buffer, int maxlen){
   assert(buffer);
   char * temp = malloc(sizeof(char)*BUFFER_SIZE);
@@ -84,17 +57,14 @@ int writeline(int fd_rcv,char nick[],char group[], char * buffer, int maxlen){
   int sent =0;
 
   sprintf(temp,"%s",buffer);
-  if (strlen(group)>0){ 
-    //add_nick_to_message(group,&buffer);
+  if (strlen(group)>0){
     sprintf(temp,"[%s]> [%s]: %s",group, nick, buffer);
 }
   if ( (strlen(nick)>0) && (strlen(group)==0) ){
-    //add_nick_to_message(nick,&buffer);
     sprintf(temp,"[%s] : %s",nick,buffer);
   }
 
   to_send = strlen(temp);
-  //  printf("lerreur ce fait la ?,%s\n",buffer);
   while(to_send>0 || i<1000){ //try maximum of 1000 times // la j'ai changé, avant la condtion était i>1000
     sent=write(fd_rcv, temp, to_send);
     if (sent==-1)

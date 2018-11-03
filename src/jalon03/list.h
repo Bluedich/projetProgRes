@@ -9,8 +9,7 @@ int get_fd_client_by_name(struct list *clients, char buffer[]);
 //initialises a client structure and adds it to the linked list passed as argument
 int add_client_to_list(struct list ** clients, int fd, char ip[], int port);
 
-// add an existing client to a linked list clients (mainly usefull for a linked list of struct group)
-//int add_existing_client_to_list(struct list ** clients, struct client * client);
+
 
 //fill fd[] with all the fd of all the clients in the list in argument
 int get_fd_client(struct list *clients, int fd[]);
@@ -25,6 +24,12 @@ void format_nick(char buffer[]);
 
 //returns nickname in buffer, returns -1 if error, 0 if false, 1 if true
 int has_nick(struct list * clients, char buffer[], int fd);
+
+//returns nickname in buffer, returns -1 if error, 0 if false, >0 if true
+int has_group(struct list * clients, char buffer[], int fd);
+
+// change the group of the client with sock fd by buffer -1 if error
+int change_group(struct list * clients, char buffer[], int fd);
 
 //removes corresponding client from linked list
 int remove_client(struct list ** clients, int fd);

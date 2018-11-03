@@ -253,6 +253,30 @@ int has_nick(struct list * clients, char buffer[], int fd){ //returns nick in "b
   //free(client);
 }
 
+int has_group(struct list * clients, char buffer[], int fd){ //returns nick in "buffer", returns -1 if error, 0 if false >0 if true
+  struct client * client = (struct client *) malloc(sizeof(struct client));
+  memset(client, 0, sizeof(struct client));
+  if(get_client_by_fd(clients, &client, fd) == -1){
+    printf("ERROR getting client fd\n");
+    return -1;
+  }
+  strcpy(buffer, client->group);
+  return strlen(client->group);
+  //free(client);
+}
+
+change_group(struct list * clients, char buffer[], int fd){ //returns nick in "buffer", returns -1 if error, 0 if it worked
+  struct client * client = (struct client *) malloc(sizeof(struct client));
+  memset(client, 0, sizeof(struct client));
+  if(get_client_by_fd(clients, &client, fd) == -1){
+    printf("ERROR getting client fd\n");
+    return -1;
+  }
+  strcpy(client->group, buffer);
+  return 0;
+  //free(client);
+}
+
 int remove_client(struct list ** clients, int fd){
   struct list * before = *clients;
   if(before == NULL){
