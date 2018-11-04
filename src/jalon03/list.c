@@ -54,6 +54,16 @@ int add_existing_client_to_list(struct list ** clients, struct client * client){
 }
 */
 
+int get_fd_client_by_name(struct list * clients, char name[]){
+  struct client * client = (struct client *) malloc(sizeof(struct client));
+  int res = get_client_by_nick(clients, &client, name);
+  if (res==-1) {
+    printf("ERROR : Tried to get fd of non-existing client.\n");
+    return 1;
+  }
+  return client->fd;
+}
+
 int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //internal function
   struct list * current = clients;
   if(current == NULL)
@@ -72,21 +82,6 @@ int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //
   }
 
   return -1; // il n'existe pas
-}
-
-int get_fd_client_by_name(struct list *clients, char nick[]){
-  struct list * current = clients;
-  if(current == NULL)
-    return -1;
-
-  while (current != NULL){
-    if(current->client->hasNick && strcmp(current->client->nickname, nick)==0){
-      return current->client->fd;
-    }
-    //sinon on parcour la liste
-    current = current->next;
-  }
-  return -1; // il existe pas
 }
 
 int get_fd_client(struct list *clients, int fd[]){  // return the fd of all the client in the linked list
@@ -265,7 +260,7 @@ int has_group(struct list * clients, char buffer[], int fd){ //returns nick in "
   //free(client);
 }
 
-change_group(struct list * clients, char buffer[], int fd){ //returns nick in "buffer", returns -1 if error, 0 if it worked
+int change_group(struct list * clients, char buffer[], int fd){ //returns nick in "buffer", returns -1 if error, 0 if it worked
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
   if(get_client_by_fd(clients, &client, fd) == -1){

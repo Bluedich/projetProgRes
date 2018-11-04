@@ -9,6 +9,7 @@
 
 #define BUFFER_SIZE 1024
 #define MAX_NICK_SIZE 64
+#define MAX_CL 20
 
 typedef enum {NONE, RECONNECT, CLOSE} CMD;
 

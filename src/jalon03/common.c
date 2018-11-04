@@ -22,7 +22,7 @@ int separate( char  buffer[]){
   strcpy(txt,buffer);
 
   int i=0;
-  while(strncmp(txt+i," ",1)!=0){ //aller jusqu'au premeir espace
+  while(strncmp(txt+i," ",1)!=0){ //go to first blank space
       i++;
   }
   i++;
@@ -32,21 +32,22 @@ int separate( char  buffer[]){
     j++;
   }
   buffer[j-i]=txt[j];
+  free(txt);
   }
 
-int get_name_in_command( char  buffer_out[], char  buffer_in[]){
+int get_name_in_command( char buffer_out[], char  buffer_in[]){
   assert(buffer_in);
   assert(buffer_out);
 
   int i=0;
-  while(strncmp(buffer_in+i," ",1)){ //aller jusqu'au premeir espace
+  while(strncmp(buffer_in+i," ",1)){ //go to first blank space
       buffer_out[i]=buffer_in[i];
       i++;
   }
   strncpy(buffer_out+i,"\0",1);
 }
 
-int writeline(int fd_rcv,char nick[],char group[], char * buffer, int maxlen){
+int writeline(int fd_rcv, char nick[], char group[], char * buffer, int maxlen){
   assert(buffer);
   char * temp = malloc(sizeof(char)*BUFFER_SIZE);
   //strcpy(temp,buffer);
@@ -58,14 +59,14 @@ int writeline(int fd_rcv,char nick[],char group[], char * buffer, int maxlen){
 
   sprintf(temp,"%s",buffer);
   if (strlen(group)>0){
-    sprintf(temp,"[%s]> [%s]: %s",group, nick, buffer);
+    sprintf(temp,"[%s][%s]: %s",group, nick, buffer);
 }
   if ( (strlen(nick)>0) && (strlen(group)==0) ){
     sprintf(temp,"[%s] : %s",nick,buffer);
   }
 
   to_send = strlen(temp);
-  while(to_send>0 || i<1000){ //try maximum of 1000 times // la j'ai changé, avant la condtion était i>1000
+  while(to_send>0 && i<1000){ //try maximum of 1000 times
     sent=write(fd_rcv, temp, to_send);
     if (sent==-1)
       error("ERROR writing line");
