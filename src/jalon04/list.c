@@ -16,7 +16,15 @@ struct list{
   struct list * next;
 };
 
-
+int print_list(struct list * clients){
+  struct list * current = clients;
+  while(current!=NULL){
+    printf("-nick:%s fd:%d\n", current->client->nickname, current->client->fd);
+    current = current->next;
+  }
+  printf("End of list\n");
+  return 0;
+}
 
 int get_client_by_nick(struct list * clients, struct client ** client, char nick[]){ //internal function
   struct list * current = clients;
@@ -66,9 +74,7 @@ int get_fd_client_by_name(struct list * clients, char name[]){
 
 int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //internal function
   struct list * current = clients;
-  if(current == NULL)
-    return -1;
-
+  if(current == NULL) return -1;
   while (current != NULL){
     if(current->client->fd==fd){
       if (client==NULL){
@@ -80,7 +86,6 @@ int get_client_by_fd(struct list * clients, struct client ** client, int fd){ //
     //sinon on parcour la liste
     current = current->next;
   }
-
   return -1; // il n'existe pas
 }
 
@@ -146,20 +151,11 @@ int add_client_to_list(struct list ** clients, int fd, char ip[], int port){
   time_t rawtime;
   time(&rawtime);
   strcpy(client->con_date, asctime(localtime(&rawtime)));
+  memset(client->group, 0, MAX_NICK_SIZE);
 
   new_start->client = client;
   new_start->next = *clients;
   *clients=new_start;
-}
-
-int print_list(struct list * clients){
-  struct list * current = clients;
-  while(current!=NULL){
-    printf("-nick:%s fd:%d\n", current->client->nickname, current->client->fd);
-    current = current->next;
-  }
-  printf("End of list\n");
-  return 0;
 }
 
 int get_online_users(struct list * clients, char buffer[]){
@@ -213,15 +209,15 @@ int set_nick(struct list * clients, int fd, char nick[]){
   int i;
   format_nick(nick);
   if (strncmp( nick, "Guest", 5) == 0){
-    printf("ERROR unvalid nick name");
+    printf("ERROR unvalid nick name 'Guest'");
     return 2;
     }
   if(get_client_by_nick(clients, &client, nick)==0){
-    printf("ERROR unvalid nick name");
+    printf("ERROR unvalid nick name (already taken)");
     return 1;
   }
   if(get_client_by_fd(clients, &client, fd) == -1){
-    printf("ERROR getting client fd\n");
+    printf("ERROR getting client by fd in set_nick\n");
     return -1;
   }
   client->hasNick = 1;
@@ -232,7 +228,6 @@ int set_nick(struct list * clients, int fd, char nick[]){
     }
   }
   strcpy(client->nickname, nick);
-  //free(client);
   return 0;
 }
 
@@ -242,7 +237,7 @@ int get_nick(struct list * clients, int fd, char nick[]){
   int i;
   format_nick(nick);
   if(get_client_by_fd(clients, &client, fd) == -1){
-    printf("ERROR getting client fd\n");
+    printf("ERROR getting client by fd in get_nick\n");
     return -1;
   }
   for (i=0;i<strlen(nick);i++){ // inutile
@@ -259,36 +254,34 @@ int has_nick(struct list * clients, char buffer[], int fd){ //returns nick in "b
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
   if(get_client_by_fd(clients, &client, fd) == -1){
-    printf("ERROR getting client fd\n");
+    printf("ERROR getting client by fd in has_nick\n");
     return -1;
   }
   strcpy(buffer, client->nickname);
   return client->hasNick;
-  //free(client);
 }
 
-int has_group(struct list * clients, char buffer[], int fd){ //returns nick in "buffer", returns -1 if error, 0 if false >0 if true
+int has_group(struct list * clients, char buffer[], int fd){ //returns nick in "buffer", returns -1 if error, 0 if false > 0 if true
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
   if(get_client_by_fd(clients, &client, fd) == -1){
-    printf("ERROR getting client fd\n");
+    printf("ERROR getting client by fd in has_group\n");
     return -1;
   }
   strcpy(buffer, client->group);
-  return strlen(client->group);
-  //free(client);
+  int len = strlen(client->group);
+  return len;
 }
 
 int change_group(struct list * clients, char buffer[], int fd){ //returns nick in "buffer", returns -1 if error, 0 if it worked
   struct client * client = (struct client *) malloc(sizeof(struct client));
   memset(client, 0, sizeof(struct client));
   if(get_client_by_fd(clients, &client, fd) == -1){
-    printf("ERROR getting client fd\n");
+    printf("ERROR getting client by fd in change_group\n");
     return -1;
   }
   strcpy(client->group, buffer);
   return 0;
-  //free(client);
 }
 
 int remove_client(struct list ** clients, int fd){

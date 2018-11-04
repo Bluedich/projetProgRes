@@ -68,11 +68,10 @@ int writeline(int fd_rcv, char nick[], char group[], char * buffer, int maxlen){
   to_send = strlen(temp);
   while(to_send>0 && i<1000){ //try maximum of 1000 times
     sent=write(fd_rcv, temp, to_send);
-    if (sent==-1)
-      error("ERROR writing line");
+    if (sent==-1) error("ERROR writing line");
     to_send-=sent;
     i++;
-    }
+  }
 
   //if(to_send)
     //printf("> Only managed to send %d out of %d bytes of the message.\n", ((int) strlen(buffer))-to_send, (int) strlen(buffer));

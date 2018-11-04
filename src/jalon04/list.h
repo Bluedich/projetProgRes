@@ -2,7 +2,6 @@
 #define _LIST_H_
 
 struct list;
-struct client; //Enfait c'est pire de mettre add_existing_client_to_list dans list.c parceque ça fait ajouter struct client ici
 
 //initialises a client structure and adds it to the linked list passed as argument
 int add_client_to_list(struct list ** clients, int fd, char ip[], int port);

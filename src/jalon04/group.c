@@ -13,22 +13,12 @@ struct listg{
   struct listg * next;
 };
 
-int write_in_group(struct group * group, char nick[], int c_sock, char buffer[]){
-  int i;
-  for (i=0;i<MAX_CL;i++){
-    if (group->fd[i]!=c_sock && group->fd[i]!=-1){
-      writeline(group->fd[i], nick, group->name, buffer, BUFFER_SIZE);
-    }
-  }
-}
-
-int get_group_by_name(struct listg ** groups, struct group ** group, char name[]){
+int get_group_by_name(struct listg ** groups, struct group ** group, char name[]){ //internal function
   struct listg * current = *groups;
   if(current == NULL)
     return -1;  // group dosn't exist
 
   while (current != NULL){
-    printf("%s\n",current->group->name);
       if(strcmp(current->group->name, name)==0){
       *group = current->group;
       return 0;
@@ -39,13 +29,29 @@ int get_group_by_name(struct listg ** groups, struct group ** group, char name[]
   return -1; // there is no this group
 }
 
+int write_in_group(struct listg ** groups, char group_name[], char nick[], int c_sock, char buffer[]){
+  struct group * group = (struct group *) malloc(sizeof(struct group));
+  int res;
+  int i;
+  res = get_group_by_name(groups, &group, group_name);
+  if (res == -1){
+    writeline(c_sock,"Server","", "FATAL ERROR : You are in a channel that does not exist.\n", BUFFER_SIZE);
+    return 1;
+  }
+  for (i=0;i<MAX_CL;i++){
+    if (group->fd[i]!=c_sock && group->fd[i]!=-1){
+      writeline(group->fd[i], nick, group->name, buffer, BUFFER_SIZE);
+    }
+  }
+  return 0;
+}
+
 int group_exist(struct listg ** groups, char name[]){ // jepense que cette fonction pourrai juste être interne
   struct listg * current = *groups;                                               // group with name name exist ?
   if(current == NULL)
     return -1;  // there is no this group
 
   while (current != NULL){
-    printf("%s\n",current->group->name);
       if(strcmp(current->group->name, name)==0){
       return 0;
     }
@@ -66,7 +72,6 @@ int create_group(struct listg ** groups, char name[]){
   int i;
 
   if(group_exist(groups, name)==0){ // if the name exist, do not create the group
-    printf("ERROR trying create the group %s : there already an existing group with this name\n",name);
     return 1;
   }
   for (i=0;i<MAX_CL;i++){
