@@ -101,17 +101,25 @@ int fd_in_tab(int fds[], int c_sock){
   error("Pas dans le groupe");
 }
 
+int nb_client_in_group(int fds[]){
+  int i;
+  int nb_client = 0;
+  for(i=0; i<MAX_CL; i++){
+    if(fds[i] != -1)
+      nb_client++;
+  }
+  return nb_client;
+}
+
 int group_is_empty(int fds[]){
   int i;
   for(i=0; i<MAX_CL; i++){
-    //printf("Fds[i] =%d\n",fds[i]);
     if(fds[i]!=-1){
-      //printf("Fds[i] =%d\n",fds[i]);
       return 0;
     }
   }
   return -1;
-  error("Pas dans le groupe");
+  error("Group empty");
 }
 
 
@@ -300,7 +308,20 @@ int remove_group(struct listg ** groups, char name[]){
 }
 
 
-
+int print_group(struct listg * groups, char group_list[]){
+  if(groups==NULL){
+    sprintf(group_list,"There is no channel in the server\nUse /create <channel_name> to create one\n");
+    return -1;
+  }
+  struct listg * current = groups;
+  while(current!=NULL){
+    if(current->group!=NULL){
+      sprintf(group_list,"%s                      -Channel '%s' with %d client(s) conected in the channel\n",group_list, current->group->name, nb_client_in_group(current->group->fd));
+    }
+      current = current->next;
+  }
+  return 0;
+}
 
 
 /*

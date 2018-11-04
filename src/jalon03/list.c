@@ -100,7 +100,7 @@ int get_fd_client(struct list *clients, int fd[]){  // return the fd of all the 
   return i; // renvoie le nombre de client
 }
 
-int nb_client_in_list(struct list *clients){  // return the numver of client in the linked list
+int nb_client_in_list(struct list *clients){  // return the number of client in the linked list
   struct list * current = clients;
   int i =0;
   if(current == NULL)
@@ -233,6 +233,25 @@ int set_nick(struct list * clients, int fd, char nick[]){
   }
   strcpy(client->nickname, nick);
   //free(client);
+  return 0;
+}
+
+int get_nick(struct list * clients, int fd, char nick[]){
+  struct client * client = (struct client *) malloc(sizeof(struct client));
+  memset(client, 0, sizeof(struct client));
+  int i;
+  format_nick(nick);
+  if(get_client_by_fd(clients, &client, fd) == -1){
+    printf("ERROR getting client fd\n");
+    return -1;
+  }
+  for (i=0;i<strlen(nick);i++){ // inutile
+    if (strncmp(nick+i," ",1)==0){
+      printf("ERROR unvalid nick name");
+      return 3;
+    }
+  }
+  strcpy(nick, client->nickname);
   return 0;
 }
 
