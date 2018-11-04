@@ -16,8 +16,11 @@ int get_fd_client(struct list *clients, int fd[]);
 //return the number of client in the linked list in argument
 int nb_client_in_list(struct list *clients);
 
-//sets name of corresponding client, returns -1 if error, 0 if success, 1 if name already taken
+//sets name of corresponding client, returns -1 if error, 0 if success, 1 if name already taken, 2 and 3 if invalid nickname (Guest or with an espace ' ')
 int set_nick(struct list * clients, int fd, char nick[]);
+
+// get the client name corresponding to fd and store it in nick
+int get_nick(struct list * clients, int fd, char nick[]);
 
 //formatted properly the buffer (mainly to remove trailing returnline)
 void format_nick(char buffer[]);

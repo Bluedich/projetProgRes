@@ -39,7 +39,7 @@ int get_name_in_command( char  buffer_out[], char  buffer_in[]){
   assert(buffer_out);
 
   int i=0;
-  while(strncmp(buffer_in+i," ",1)){ //aller jusqu'au premeir espace
+  while(strncmp(buffer_in+i," ",1)){ //
       buffer_out[i]=buffer_in[i];
       i++;
   }

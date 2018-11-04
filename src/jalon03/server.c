@@ -86,29 +86,30 @@ S_CMD get_command(char * buffer, int s_read){
     return CREATE;  // create a group
 
   if(strncmp(buffer,"/join ",6)==0 && strlen(buffer)>7)
-    return JOIN;  // envoi un message en broadcast
+    return JOIN;  // join a channel
 
   if(strncmp(buffer,"/msg ",5)==0 && strlen(buffer)>6)
     return MSGW;  // whisper to a user
 
   if(strncmp(buffer,"/msgall ",8)==0 && strlen(buffer)>8)
-    return MSGALL;  // send the message in broadcast
-    // On pourrait considérer le broadcast également comme un groupe, par défault actif, avec 3 moyen différent de parler en broadcast /msgall juste normalement
-
- // Il faudrait aussi une fonction pour parler dans un groupe même si il est pas actif /msggroup <groupname> <msg>
- // Il faut alors bien gérer le fait si l'on est bien dans le groupe, et puis envoyer le message dans le format [<groupname>] [<username>] : <msg>
- // Tout ça se fait enfait relativement bien, mais proprement je sais pas trop
+    return MSGALL;  // broadcast, send the message to all conected user
 
   if(strncmp(buffer,"/nick ",6)==0 && strlen(buffer)>7)
     return NICK;  //set a nickname
 
   if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5)
-    return WHO;  // get the infomation of all the user connect to the server
-// On pourrait rajouter une commande du style /whoareingroup <channel> (qui renvoie toues les user d'un groupes) et /group (qui renvoi tous les groups existant)
+    return WHO;  // get the infomation of all the user connected to the server
+
   if(strncmp(buffer,"/whois ",7)==0 && strlen(buffer)>8)
     return WHOIS;
-// On pourrait rajouter l'information des groupes auxquels appartient le joueur
-  return MSG;
+
+  if(strncmp(buffer,"/group ",7)==0 && strlen(buffer)>8)
+    return WHOINGROUP;  // get the infomation of all the user connected to a channel
+
+  if(strncmp(buffer,"/group",6)==0 && strlen(buffer)==7)
+    return GROUP;  // return all the channel existing in the server
+
+  return MSG;   // multicast, send the message in the channel of the client.
 }
 
 int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd, struct listg ** groups){
@@ -119,7 +120,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     char nickw[BUFFER_SIZE];
     memset(nickw, 0, BUFFER_SIZE);
     char msg[BUFFER_SIZE];
-    memset(nickw, 0, BUFFER_SIZE);
+    memset(msg, 0, BUFFER_SIZE);
     struct client * client=NULL;
     struct group * group=NULL;
     int c_sock = fd->fd;// sock client
@@ -143,7 +144,6 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           writeline(c_sock,"Server","", "You are not in a channel\n Plese use /join to join a channel\n", BUFFER_SIZE);
           break;
         }
-/**/
         res = get_group_by_name(groups, &group, client_group);
         if (res == -1){
           writeline(c_sock,"Server","", "You are in a channel who does not exsit\nGROS PROBLEME\n", BUFFER_SIZE);
@@ -228,10 +228,10 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         get_client_by_fd( *clients, &client, c_sock);     // get the struct client of the client
 
         if( hasGroup!=0 ){
-          sprintf(msg,"You're already in the channel '%s'. Please leave it before trying join the channel '%s'.\n",client_group,buffer);
+          sprintf(msg,"You're already in the channel '%s'. Please leave it before trying to join an other channel.\n",client_group,buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
-}
+        }
         res = add_client_in_group( groups, c_sock, buffer);
 
         if (res == -2){;
@@ -328,28 +328,47 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           printf("Requested info on non-existent user %s.\n", buffer);
           writeline(c_sock,"Server","", "This user doesn't exist.\n", BUFFER_SIZE);
         }
+
+        case WHOINGROUP :
+          format_nick(buffer);  // pour utiliser separate
+          separate(buffer);     // pour enlever la commande
+          get_name_in_command( nickw, buffer);  // pour obtenir le nom du group(pourrait plus ou moin être utilise pour obtenir la commande)
+          res = get_group_by_name(groups, &group, buffer);
+          if (res == -1){
+            sprintf(msg,"The channel '%s' does not exist, use '/group' to see all the channel of the server",buffer);
+            writeline(c_sock,"Server","", msg, BUFFER_SIZE);
+            break;
+          }
+          int nb_client = nb_client_in_group(group->fd);
+          if (nb_client==0){
+            sprintf(msg,"There is no client in the group '%s'\n",buffer);
+            writeline(c_sock, "Server","", msg, BUFFER_SIZE);
+          }
+
+          sprintf(msg,"%d clients connected in the channel '%s' : \n", nb_client, buffer);
+          for (res=0;res<MAX_CL;res++){    // utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
+            if (group->fd[res]!=-1 ){       // ne l'affiche pas à l'expéditeur et y'a un bug group->fd vaut souvent 0 visiblement
+              get_nick(*clients,group->fd[res],nickw);
+              sprintf(msg,"%s                   '%s'\n",msg,nickw);
+            }
+          }
+          writeline(c_sock, "Server","", msg, BUFFER_SIZE);
+
+          break;
+
+          case GROUP :
+            sprintf(msg,"The differents channel in the server are : \n");
+            print_group(*groups,msg);
+            writeline(c_sock, "Server","", msg, BUFFER_SIZE);
+
+
+            break;
+
+
     }
 
-  /*if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5){
-    writeline(c_sock,"> Client connected\n",BUFFER_SIZE);
-    int i;
-    for (i=0;i<2;i++){
-      writeline(c_sock,clients[i].nickname,BUFFER_SIZE);
-      writeline(c_sock,"\n",BUFFER_SIZE);
-    }
-    return -1;
-  }
 
-  if(strncmp(buffer,"/whois",6)==0){
 
-  }
-
-  else{
-    printf("> [%s] : %s", clients[c_sock-4].nickname, buffer);
-    //server response
-    writeline(c_sock, buffer, BUFFER_SIZE);
-  }
-  return 0;*/
 }
 
 int main(int argc, char** argv)
