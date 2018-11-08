@@ -6,6 +6,7 @@ project(RE216_JALON03)
 SET(SRC_CLIENT
 	common.c
 	client.c
+	file_trans.c
 	)
 
 

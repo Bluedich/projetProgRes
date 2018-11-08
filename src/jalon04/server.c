@@ -222,7 +222,11 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
 
       case MSGW :
         separate(buffer);     // pour enlever la commande
+<<<<<<< HEAD
         get_arg_in_command( buffer, nickw);  // pour obtenir le nom (pourrait plus ou moins être utilise pour obtenir la commande)
+=======
+        get_arg_in_command( nickw, buffer);  // pour obtenir le nom (pourrait plus ou moins être utilise pour obtenir la commande)
+>>>>>>> 03f3267d27727000069ba6c75ce558bd9b5be74d
         w_sock = get_fd_client_by_name(*clients, nickw ); // new function in list.c
         if (w_sock == -1){
           writeline(c_sock,"Server","", "This user does not exist, use /who to see all the user connected.", BUFFER_SIZE);
