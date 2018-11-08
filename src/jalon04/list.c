@@ -42,7 +42,7 @@ int get_client_by_nick(struct list * clients, struct client ** client, char nick
   return -1; // il existe pas
 }
 
-void format_nick(char buffer[]){ //(internal) function to make sur nickname is formatted properly (mainly to remove trailing returnline)
+void format_nick(char buffer[]){ //(internal) function to make sure nickname is formatted properly (mainly to remove trailing returnline)
   int i=0;
   while(i<BUFFER_SIZE-1 && buffer[i]!='\n'){
     i++;
@@ -195,11 +195,11 @@ int get_info(struct list * clients, char buffer[], char nick[]){
   get_client_by_nick(clients, &client, nickname);
   memset(buffer, 0, BUFFER_SIZE);
   if (strlen(client->group)==0){
-      sprintf(buffer, "%s connected since %s with IP address %s and port number %d \n", client->nickname, client->con_date, client->ip_addr, client->port_nb);
-}
-else {
-    sprintf(buffer, "%s is in the channel %s\nConnected since %s with IP address %s and port number %d \n", client->nickname, client->group, client->con_date, client->ip_addr, client->port_nb);
-}
+      sprintf(buffer, "%s connected on %s with IP address %s and port number %d.", client->nickname, client->con_date, client->ip_addr, client->port_nb);
+  }
+  else {
+    sprintf(buffer, "%s is in the channel %s. He has connected on %s with IP address %s and port number %d.", client->nickname, client->group, client->con_date, client->ip_addr, client->port_nb);
+  }
   return 0;
 }
 

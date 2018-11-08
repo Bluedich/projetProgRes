@@ -105,17 +105,21 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     int hasGroup = has_group(*clients,client_group,c_sock);
     format_nick(nick);
     if(!hasNick && cmd!=NICK && cmd!=QUIT){ //Not allowed to talk until a nickname is chosen
-      writeline(c_sock,"Server","", "Please use /nick <your_pseudo> to login.\n", BUFFER_SIZE);
+      writeline(c_sock,"Server","", "Please use /nick <your_pseudo> to login.", BUFFER_SIZE);
       return 0;
     }
 
     switch(cmd){
       case MSG :  // on parle dans le groupe actif
         if (strlen(client_group)==0){
-          writeline(c_sock,"Server","", "You are not in a channel.\n Please use /join <channel name> to join a channel\n", BUFFER_SIZE);
+          writeline(c_sock,"Server","", "You are not in a channel. Please use /join <channel name> to join a channel", BUFFER_SIZE);
+        }
+        else if(pop_of_group(groups, client_group)==1){
+          writeline(c_sock,"Server","", "No point in writing in the channel, no one else is here...", BUFFER_SIZE);
         }
         else {
           write_in_group(groups, client_group, nick, c_sock, buffer);
+          writeline(c_sock,"","","/newprompt", BUFFER_SIZE); //to force a new <name> prompt in client
         }
         break;
 
@@ -142,30 +146,30 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         }
         res = remove_client_in_group(groups,c_sock,buffer);
         if (res==-1){
-          printf("> Client '%s' try to leave the channel '%s' but this channel does not exist\n",nick,buffer);
-          sprintf(msg,"The group does not exist '%s', you can't leave it.\n",buffer);
+          printf("> Client '%s' try to leave the channel '%s' but this channel does not exist.\n",nick,buffer);
+          sprintf(msg,"The group does not exist '%s', you can't leave it.",buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
         if (res==-2){
-          printf("> Client '%s' try to leave the channel '%s' but he is not in this channel\n",nick,buffer);
-          sprintf(msg,"You are not in the channel '%s', you can't leave it.\n",buffer);
+          printf("> Client '%s' tried to leave the channel '%s' but he is not in this channel.\n",nick,buffer);
+          sprintf(msg,"You are not in the channel '%s', you can't leave it.",buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
         if (res==0){
           change_group(*clients,"",c_sock);
-          printf("> Client '%s' has left the channel '%s'\n",nick,buffer);
-          sprintf(msg,"You have quit the channel '%s'.\n",buffer);
-          writeline(c_sock,"Server","", msg, BUFFER_SIZE);
+          printf("> Client '%s' has left the channel '%s'.\n",nick,buffer);
+          sprintf(msg,"/username %s "BOLDBLACK"<Server>"RESET" You have quit the channel '%s'.", nick, buffer);
+          writeline(c_sock,"","", msg, BUFFER_SIZE);
           break;
         }
         if (res==10){
           remove_group(groups,buffer);
-          printf("> Client '%s' has left the channel '%s' and Channel '%s' destroyed\n",nick,buffer, buffer);
+          printf("> Client '%s' has left the channel '%s' and Channel '%s' destroyed.\n",nick,buffer, buffer);
           change_group(*clients,"",c_sock);
-          sprintf(msg,"You have quit the channel '%s' and the channel is destroyed.\n",buffer);
-          writeline(c_sock,"Server","", msg, BUFFER_SIZE);
+          sprintf(msg,"/username %s "BOLDBLACK"<Server>"RESET" You have quit the channel '%s' and the channel is destroyed.", nick, buffer);
+          writeline(c_sock,"","", msg, BUFFER_SIZE);
           break;
         }
 
@@ -175,58 +179,63 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         separate(buffer);     // enlève la commande du buffer
 
         if (create_group(groups, buffer)==0){
-          printf("> Channel %s created\n", buffer);
-          sprintf(msg,"You have created the channel '%s'.\n",buffer);
+          printf("> Channel %s created.\n", buffer);
+          sprintf(msg,"You have created the channel '%s'.",buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
         }
         else {
-          printf("> Channel %s already exist\n", buffer);
-          sprintf(msg,"Channel %s already exist\n", buffer);
+          printf("> Channel %s already exist.\n", buffer);
+          sprintf(msg,"Channel %s already exist.", buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
         }
         break;
 
       case JOIN :
-        format_nick(buffer);  // pour utiliser separate (rajoute \0)pas sure que ce soit utile en réalité, en tout cas on peut surement mieux faire
         separate(buffer);     // removes command from buffer
 
         if( hasGroup!=0 ){
-          sprintf(msg,"You're already in the channel '%s'. Please leave it before trying join the channel '%s'.\n",client_group,buffer);
+          sprintf(msg,"You're already in the channel '%s'. Please leave it before trying join the channel '%s'.",client_group,buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
           break;
         }
         res = add_client_in_group( groups, c_sock, buffer);
 
         if (res == -2){;
-          sprintf(msg,"Channel '%s' is full\n", buffer);
+          sprintf(msg,"Channel '%s' is full.", buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
         }
         else if (res == -1){;
-          sprintf(msg,"Channel '%s' doesn't exist\n", buffer);
+          sprintf(msg,"Channel '%s' doesn't exist.", buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
         }
         else if (res == -3){
           change_group(*clients,buffer,c_sock);
-          sprintf(msg," You are already in the channel '%s'\n",buffer);
+          sprintf(msg," You are already in the channel '%s'.",buffer);
           writeline(c_sock,"Server","", msg, BUFFER_SIZE);
         }
         else {
           change_group(*clients,buffer,c_sock);
-          sprintf(msg,"You have joined the channel '%s'\n",buffer);
-          writeline(c_sock,"Server","", msg, BUFFER_SIZE);
+          sprintf(msg,"/username %s><%s "BOLDBLACK"<Server>"RESET" You have joined the channel '%s'.",nick, buffer, buffer);
+          writeline(c_sock,"","", msg, BUFFER_SIZE);
         }
         break;
 
       case MSGW :
         separate(buffer);     // pour enlever la commande
-        get_name_in_command( nickw, buffer);  // pour obtenir le nom (pourrait plus ou moins être utilise pour obtenir la commande)
+        get_arg_in_command( buffer, nickw);  // pour obtenir le nom (pourrait plus ou moins être utilise pour obtenir la commande)
         w_sock = get_fd_client_by_name(*clients, nickw ); // new function in list.c
         if (w_sock == -1){
-          writeline(c_sock,"Server","", "This user does not exist, use /who to see all the user connected\n", BUFFER_SIZE);
+          writeline(c_sock,"Server","", "This user does not exist, use /who to see all the user connected.", BUFFER_SIZE);
+          break;
+        }
+        if (w_sock== c_sock){
+          writeline(c_sock,"Server","", "You can't whisper to yourself.", BUFFER_SIZE);
           break;
         }
         separate(buffer);
-        writeline(w_sock,nick,"", buffer, BUFFER_SIZE);
+        sprintf(msg, "%s\n", buffer);
+        writeline(w_sock,"whisper", nick, buffer, BUFFER_SIZE);
+        writeline(c_sock,"","","/newprompt", BUFFER_SIZE); //to force a new <name> prompt in client
         break;
 
       case MSGALL :
@@ -236,15 +245,16 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         memset(sock_tab,0,20);
         res = get_fd_client(*clients,sock_tab); // rempli un tableau d'entier avec tous les fd des clients
         if (res == 1){// ça n'arrivera plus ou moins jamais
-          writeline(c_sock,"Server","", "You are the unique user of the Server\n", BUFFER_SIZE);
+          writeline(c_sock,"Server","", "You are the unique user of the Server", BUFFER_SIZE);
           break;
         }
         for (res=0;res<nb_client;res++){// utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
           if (sock_tab[res]!=c_sock){// ne l'affiche pas à l'expéditeur
           sprintf(msg,"%s",buffer);
-            writeline(sock_tab[res], nick,"", buffer, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
+            writeline(sock_tab[res], "broadcast", nick, buffer, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
           }
         }
+        writeline(c_sock,"","","/newprompt", BUFFER_SIZE); //to force a new <name> prompt in client
         break;
 
       case NICK :
@@ -252,24 +262,32 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           res = set_nick(*clients, c_sock, buffer);
           if(res==1){
             printf("> Client can't change nick : nick %s already taken.\n", buffer);
-            writeline(c_sock,"Server","", "Nickname is already taken. Please chose an other one.\n", BUFFER_SIZE);
+            writeline(c_sock,"Server","", "Nickname is already taken. Please chose an other one.", BUFFER_SIZE);
           }
           else if(res==0){
-            printf("> [%s] Nickname set\n", buffer);
-            writeline(c_sock,"Server","", "Nickname set. You can now use the server !\n", BUFFER_SIZE);
+            printf("> [%s] Nickname set.\n", buffer);
+            memset(buffer, 0, BUFFER_SIZE);
+            has_nick(*clients, nick, c_sock);
+            if(hasGroup){
+              sprintf(buffer, "/username %s><%s "BOLDBLACK"<Server>"RESET" Nickname set. You can now use the server !", nick, client_group);
+            }
+            else{
+              sprintf(buffer, "/username %s "BOLDBLACK"<Server>"RESET" Nickname set. You can now use the server !", nick);
+            }
+            writeline(c_sock,"","",buffer, BUFFER_SIZE);
           }
           else if(res==2){
-            printf("> [%s] Tried to use nickname beginning with 'Guest'\n", buffer);
-            writeline(c_sock,"Server","", "Can't use nickname beginning with 'Guest'\n", BUFFER_SIZE);
+            printf("> [%s] Tried to use nickname beginning with 'Guest'", buffer);
+            writeline(c_sock,"Server","", "Can't use nickname beginning with 'Guest'", BUFFER_SIZE);
           }
           else if(res==3){
-            printf("> [%s] Tried to use nickname containing ' '\n", buffer);
-            writeline(c_sock,"Server","", "Can't use nickname containing ' '\n", BUFFER_SIZE);
+            printf("> [%s] Tried to use nickname containing ' '", buffer);
+            writeline(c_sock,"Server","", "Can't use nickname containing ' '", BUFFER_SIZE);
           }
         break;
 
       case WHO :
-        printf("> [%s] Requested to see online users\n", nick);
+        printf("> [%s] Requested to see online users", nick);
         get_online_users(*clients, buffer);
         writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
         break;
@@ -278,7 +296,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         //check if user exists
         format_nick(buffer);// je sais pas si c'est nécessaire
         separate(buffer);
-        printf("> [%s] ", nick);
+        printf("> [%s] \n", nick);
         if(exists(*clients, buffer)){
           printf("Requested info on %s.\n", buffer);
           get_info(*clients, buffer, buffer);
@@ -286,9 +304,9 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         }
         else{
           printf("Requested info on non-existent user %s.\n", buffer);
-          writeline(c_sock,"Server","", "This user doesn't exist.\n", BUFFER_SIZE);
+          writeline(c_sock,"Server","", "This user doesn't exist.", BUFFER_SIZE);
         }
-    }
+      }
 
   /*if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5){
     writeline(c_sock,"> Client connected\n",BUFFER_SIZE);
@@ -372,7 +390,7 @@ int main(int argc, char** argv)
         memset(buffer, 0, BUFFER_SIZE);
         readline(0, buffer, BUFFER_SIZE);
         if(strncmp(buffer,"/quit",5)==0){
-          printf("> Closing server\n");
+          printf("> Closing server");
           break;
         }
       }
@@ -385,16 +403,16 @@ int main(int argc, char** argv)
           c_sock = do_accept(sock, c_addr, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
           add_client_to_list(&clients, c_sock, inet_ntoa( ((struct sockaddr_in * ) c_addr)->sin_addr)/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
-          printf("> Connection accepted \n");
-          writeline(c_sock,"Server","", "Welcome to the server. Please use /nick <your_pseudo> to login\n", BUFFER_SIZE);  // welcome message for the client
+          printf("> Connection accepted ");
+          writeline(c_sock,"Server","", "Welcome to the server. Please use /nick <your_pseudo> to login", BUFFER_SIZE);  // welcome message for the client
         }
 
         else{
           c_addrlen = sizeof(*c_addr);
           c_sock = do_accept(sock, c_addr, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
-          writeline(c_sock,"[Server] :","", "Server cannot accept incoming connections anymore. Please try again later.\n", BUFFER_SIZE);
-          printf("> Connection to a client denied, too many clients already connected\n");
+          writeline(c_sock,"Server","", "Server cannot accept incoming connections anymore. Please try again later.", BUFFER_SIZE);
+          printf("> Connection to a client denied, too many clients already connected");
           fds[i].fd=-1; //we want to ignore this fd next loops
           //no point in adding client to client list
           close(c_sock);

@@ -61,8 +61,9 @@ void handle_client_message(int sock, char * buffer, int * cont){
   writeline(sock,"","", buffer, BUFFER_SIZE);
 }
 
-CMD handle_server_response(int sock, char * buffer){
+CMD handle_server_response(int sock, char buffer[]){
   assert(buffer);
+  char buffer2[BUFFER_SIZE];
   int size_read = readline(sock, buffer, BUFFER_SIZE);
   if(size_read==0){
     printf("Server has closed connection\n");
@@ -77,10 +78,46 @@ CMD handle_server_response(int sock, char * buffer){
       }
     }
   }
+  else if(buffer[0]=='/'){
+    get_next_arg(buffer, buffer2);
+    if(strncmp(buffer2,"/ftreq",6)==0) return FTREQ;
+    if(strncmp(buffer2, "/ftreqP", 7)==0) return FTREQP_C;
+    if(strncmp(buffer2, "/ftreqN", 7)==0) return FTREQN_C;
+    if(strncmp(buffer2, "/username", 9)==0) return USERNAME;
+    if(strncmp(buffer2, "/newprompt", 10)==0) return NEWPROMPT;
+    sprintf(buffer,"ERROR client received unrecognized command %s from server", buffer2);
+    error(buffer);
+  }
   else{
     printf(" %s", buffer);
     return NONE;
   }
+}
+
+int prompt_user_for_file_transfer(char buffer[], int sock){
+  char file_name[BUFFER_SIZE];
+  memset(file_name, 0, BUFFER_SIZE);
+  char user_name[BUFFER_SIZE];
+  memset(user_name, 0, BUFFER_SIZE);
+
+  get_next_arg(buffer, file_name);
+  get_next_arg(buffer, user_name);
+
+  while(1){
+    printf("> %s wants to send file %s to you. Do you accept ? (y/n)\n", user_name);
+    readline(0,buffer,BUFFER_SIZE);
+    if(strncmp(buffer,"y",1)==0){
+      memset(buffer, 0, BUFFER_SIZE);
+      sprintf(buffer, "/ftreqP %s", user_name);
+      writeline(sock,"","",buffer, BUFFER_SIZE);
+    }
+    if(strncmp(buffer,"n",1)==0){
+      memset(buffer, 0, BUFFER_SIZE);
+      sprintf(buffer, "/ftreqN %s", user_name);
+      writeline(sock,"","",buffer, BUFFER_SIZE);
+    }
+  }
+  return 0;
 }
 
 int main(int argc,char** argv) {
@@ -101,6 +138,9 @@ int main(int argc,char** argv) {
     do_connect(sock, res->ai_addr, res->ai_addrlen);
 
     char buffer[BUFFER_SIZE];
+    char buffer2[BUFFER_SIZE];
+    char nick[BUFFER_SIZE];
+    strcpy(nick, "Guest");
     int cont=1;
     CMD cmd;
     struct pollfd fds[2];
@@ -111,13 +151,10 @@ int main(int argc,char** argv) {
     fds[1].fd = sock;
     fds[1].events = POLLIN;
 
-    printf("> ");   // je suis pas sure que ce soit pas de la merde ça
-    fflush(stdout); //to make sure above printf is displayed
-
     do{
       assert(fds);
-      if(poll(fds, 2, -1)==-1)
-        error("ERROR polling");
+
+      if(poll(fds, 2, -1)==-1) error("ERROR polling");
 
       if(fds[0].revents & POLLIN){
         //get user input
@@ -130,22 +167,37 @@ int main(int argc,char** argv) {
         //receive message from server
         cmd = handle_server_response(sock, buffer);
 
-      //apply commands from server or user if needed
-      switch(cmd){
-        case RECONNECT:
-          close(sock);
-          sock = do_socket();
-          do_connect(sock, res->ai_addr, res->ai_addrlen);
-          break;
-        case CLOSE:
-          freeaddrinfo(res); //no longer needed
-          close(sock);
-          cont=0;
-          break;
+        //apply commands from server or user if needed
+        switch(cmd){
+          case RECONNECT: //try to reconnect to server
+            close(sock);
+            sock = do_socket();
+            do_connect(sock, res->ai_addr, res->ai_addrlen);
+            break;
+          case CLOSE:
+            freeaddrinfo(res); //no longer needed
+            close(sock);
+            cont=0;
+            break;
+          case FTREQ: //ask user if he wants to accept file connection
+            prompt_user_for_file_transfer(buffer, sock);
+            break;
+          case USERNAME:
+            get_next_arg(buffer, nick); //update nick
+            printf("%s", buffer);
+            break;
+          case NEWPROMPT:
+            break;
+          case NONE:
+            break;
+          default:
+            error("Unrecognized client-side command");
         }
+        if(cmd == NEWPROMPT) printf(BOLDGREEN "<%s> " RESET, nick);
+        else printf(BOLDGREEN "\n<%s> " RESET, nick);
+        fflush(stdout); //to make sure above printf is displayed
       }
-      printf("> ");   // C'est un peu de la merde ça
-      fflush(stdout); //to make sure above printf is displayed
+
     }while(cont);
     printf("Stopping client\n");
     return 0;

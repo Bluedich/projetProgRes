@@ -9,8 +9,11 @@ int add_list_client_to_group(struct listg ** group, int fd, char ip[], int port)
 //create a group with the name name
 int create_group(struct listg ** groups, char name[]);
 
-//resturn if the group with name exist
+//returns if the group with name exist
 int group_exist(struct listg ** groups, char name[]);
+
+//returns number of members of group
+int pop_of_group(struct listg ** groups, char group_name[]);
 
 //return if the group is empty or not 0 if it is not empty, -1 if it is empty
 int group_is_empty(int fds[]);

@@ -35,9 +35,10 @@ int write_in_group(struct listg ** groups, char group_name[], char nick[], int c
   int i;
   res = get_group_by_name(groups, &group, group_name);
   if (res == -1){
-    writeline(c_sock,"Server","", "FATAL ERROR : You are in a channel that does not exist.\n", BUFFER_SIZE);
+    writeline(c_sock,"Server","", "FATAL ERROR : You are in a channel that does not exist.", BUFFER_SIZE);
     return 1;
   }
+  format_nick(buffer);
   for (i=0;i<MAX_CL;i++){
     if (group->fd[i]!=c_sock && group->fd[i]!=-1){
       writeline(group->fd[i], nick, group->name, buffer, BUFFER_SIZE);
@@ -125,6 +126,16 @@ int group_is_empty(int fds[]){
   }
   return -1;
   error("Group empty");
+}
+
+int pop_of_group(struct listg ** groups, char group_name[]){
+  struct group * group = (struct group *) malloc(sizeof(struct group));
+  int res = get_group_by_name(groups, &group, group_name);
+  if (res == -1){
+  error("FATAL ERROR : Tried to get info on a channel that does not exist.");
+    return 1;
+  }
+  return(nb_client_in_group(group->fd));
 }
 
 
