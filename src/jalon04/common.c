@@ -36,21 +36,13 @@ int separate(char buffer[]){
   return 0;
 }
 
-<<<<<<< HEAD
 int get_arg_in_command(char buffer_in[], char buffer_out[]){
-=======
-int get_arg_in_command( char buffer_out[], char  buffer_in[]){
->>>>>>> 03f3267d27727000069ba6c75ce558bd9b5be74d
   assert(buffer_in);
   assert(buffer_out);
   memset(buffer_out, 0, BUFFER_SIZE);
 
   int i=0;
-<<<<<<< HEAD
   while(buffer_in[i]!=' ' && buffer_in[i]!='\n' && buffer_in[i]!='\0'){ //go to first blank space
-=======
-  while( strncmp(buffer_in+i," ",1) && strncmp(buffer_in+i,"\0",1) && strncmp(buffer_in+i,"\n",1) ){ //go to first blank space
->>>>>>> 03f3267d27727000069ba6c75ce558bd9b5be74d
       buffer_out[i]=buffer_in[i];
       i++;
   }

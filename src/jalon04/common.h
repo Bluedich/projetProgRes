@@ -27,12 +27,9 @@ int writeline(int fd_rcv, char * nick, char * group, char * buffer, int maxlen);
 
 int separate(char buffer[]); //removes start of buffer until next ' ' in buffer
 
-<<<<<<< HEAD
 int get_arg_in_command(char buffer_out[], char buffer_in[]); //returns start of buffer until next ' ' or '\0' or '\n'
 
-int get_next_arg(char buffer_in[], char buffer_out[]);
-=======
-int get_arg_in_command( char buffer_out[], char buffer_in[]);
->>>>>>> 03f3267d27727000069ba6c75ce558bd9b5be74d
+int get_next_arg(char buffer_in[], char buffer_out[]); //returns next arg in buffer_out and removes start of buffer from buffer_in
+
 
 #endif
