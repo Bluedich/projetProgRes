@@ -73,21 +73,16 @@ S_CMD get_command(char * buffer, int s_read){
 
   if(strncmp(buffer,"/msgall ",8)==0 && strlen(buffer)>8)
     return MSGALL;  // send the message in broadcast
-    // On pourrait considérer le broadcast également comme un groupe, par défault actif, avec 3 moyen différent de parler en broadcast /msgall juste normalement
-
- // Il faudrait aussi une fonction pour parler dans un groupe même si il est pas actif /msggroup <groupname> <msg>
- // Il faut alors bien gérer le fait si l'on est bien dans le groupe, et puis envoyer le message dans le format [<groupname>] [<username>] : <msg>
- // Tout ça se fait enfait relativement bien, mais proprement je sais pas trop
 
   if(strncmp(buffer,"/nick ",6)==0 && strlen(buffer)>7)
     return NICK;  //set a nickname
 
   if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5)
     return WHO;  // get the infomation of all the user connect to the server
-// On pourrait rajouter une commande du style /whoareingroup <channel> (qui renvoie toues les user d'un groupes) et /group (qui renvoi tous les groups existant)
+
   if(strncmp(buffer,"/whois ",7)==0 && strlen(buffer)>8)
     return WHOIS;
-// On pourrait rajouter l'information des groupes auxquels appartient le joueur
+
   return MSG;
 }
 
@@ -125,6 +120,10 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         break;
 
       case QUIT :
+        if(hasGroup){
+          sprintf(buffer,"/quit %s\n",client_group);
+          command(buffer, LEAVE, clients,  fd, groups);
+      }
         remove_client(clients, c_sock);
         close(c_sock);
         fd->fd = -1; //flag structure as unused
