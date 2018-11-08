@@ -1,6 +1,5 @@
 #include "common.h"
-
-
+#include "file_trans.c.h"
 
 int send_file( char *path, int fd_rcv_file){
   FILE * fichier;
@@ -14,7 +13,8 @@ int send_file( char *path, int fd_rcv_file){
   memset(temp, 0, BUFFER_SIZE);
   while(nb_read!=0){ // tant que y'a des truck dans le fichier
     nb_read = 0;
-    while(read>0 && i<1000){ // tant que l'on a pas lu BUFFER_SIZE octet
+    read = 0;
+    while(read<BUFFER_SIZE && i<1000){ // tant que l'on a pas lu BUFFER_SIZE octet
         read = fread(temp,sizeof(char),BUFFER_SIZE,fichier);
         if (read==-1) error("ERROR reading file (fread)");
         nb_read+=read;
@@ -57,7 +57,7 @@ int rcv_file(char *path, int fd_rcv_file){
 /*
 int main(int argc, char * argv[]){
   send_file("toto.txt",0);
-  rcv_file("tata.txt", 0);
+//  rcv_file("tata.txt", 1);
 
 }
 */
