@@ -208,6 +208,10 @@ int set_nick(struct list * clients, int fd, char nick[]){
   memset(client, 0, sizeof(struct client));
   int i;
   format_nick(nick);
+  if (strlen(nick)>MAX_NICK_SIZE){
+    printf("ERROR unvalid nick name (too long)");
+    return 4;
+  }
   if (strncmp( nick, "Guest", 5) == 0){
     printf("ERROR unvalid nick name 'Guest'");
     return 2;

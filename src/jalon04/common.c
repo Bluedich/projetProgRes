@@ -35,12 +35,12 @@ int separate( char  buffer[]){
   free(txt);
   }
 
-int get_name_in_command( char buffer_out[], char  buffer_in[]){
+int get_arg_in_command( char buffer_out[], char  buffer_in[]){
   assert(buffer_in);
   assert(buffer_out);
 
   int i=0;
-  while(strncmp(buffer_in+i," ",1)){ //go to first blank space
+  while( strncmp(buffer_in+i," ",1) && strncmp(buffer_in+i,"\0",1) && strncmp(buffer_in+i,"\n",1) ){ //go to first blank space
       buffer_out[i]=buffer_in[i];
       i++;
   }

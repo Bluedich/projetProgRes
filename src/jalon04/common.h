@@ -23,6 +23,6 @@ int writeline(int fd_rcv,char * nick,char * group, char * buffer, int maxlen);
 
 int separate( char buffer[]);
 
-int get_name_in_command( char  buffer_out[], char  buffer_in[]);
+int get_arg_in_command( char buffer_out[], char buffer_in[]);
 
 #endif
