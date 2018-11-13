@@ -1,4 +1,5 @@
 #include "common.h"
+#include <time.h>
 
 void error(const char *msg)
 {
@@ -65,14 +66,18 @@ int writeline(int fd_rcv, char nick[], char group[], char * buffer, int maxlen){
   int i=0;
   int to_send=0;
   int sent =0;
+  time_t rawtime;
+  time(&rawtime);
+  char date_time[512];
+  strcpy(date_time, asctime(localtime(&rawtime)));
 
   sprintf(temp,"%s",buffer);
   if (strlen(group)>0){
-    sprintf(temp,BOLDBLUE "\n<%s><%s>" RESET " %s",group, nick, buffer);
+    sprintf(temp,RED"\n%s" RESET BOLDBLUE "<%s><%s>" RESET " %s",date_time,group, nick, buffer);
 }
   if ( (strlen(nick)>0) && (strlen(group)==0) ){
     if(strncmp(nick, "Server", 6)==0) sprintf(temp,BOLDBLACK"<%s>" RESET " %s",nick,buffer);
-    else sprintf(temp,BOLDBLUE"\n<%s>" RESET " %s",nick,buffer);
+    else sprintf(temp,RED"\n%s" RESET BOLDBLUE "<%s>" RESET " %s",date_time,nick,buffer);
   }
 
   to_send = strlen(temp);
