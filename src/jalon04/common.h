@@ -17,7 +17,7 @@
 #define RED         "\033[31m"
 #define RESET   "\033[0m"
 
-typedef enum {NONE, RECONNECT, CLOSE, FTREQ, FTREQP_C, FTREQN_C, USERNAME, NEWPROMPT} CMD; //commands received by client
+typedef enum {NONE, RECONNECT, CLOSE, FTREQ, FTREQP_C, USERNAME, NEWPROMPT} CMD; //commands received by client
 
 typedef enum {MSG, QUIT, NICK, MSGW, MSGALL, CREATE, LEAVE, JOIN, WHO, WHOIS, WHOINGROUP,GROUP, FTREQP_S, FTREQN_S, FTSUCCESS, SEND} S_CMD; //commands received by server
 

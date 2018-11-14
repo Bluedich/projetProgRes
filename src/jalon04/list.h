@@ -11,6 +11,7 @@ int get_fd_client_by_name(struct list * clients, char name[]);
 
 //fill fd[] with all the fd of all the clients in the list in argument
 int get_fd_client(struct list *clients, int fd[]);
+
 //return the number of client in the linked list in argument
 int nb_client_in_list(struct list *clients);
 
