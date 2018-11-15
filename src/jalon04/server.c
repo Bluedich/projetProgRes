@@ -390,7 +390,7 @@ int main(int argc, char** argv)
         memset(buffer, 0, BUFFER_SIZE);
         readline(0, buffer, BUFFER_SIZE);
         if(strncmp(buffer,"/quit",5)==0){
-          printf("> Closing server");
+          printf("> Closing server\n");
           break;
         }
       }
