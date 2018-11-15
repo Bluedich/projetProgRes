@@ -13,9 +13,11 @@
 #define BOLDBLACK   "\033[1m\033[30m"      /* Bold Black */
 #define BOLDGREEN   "\033[1m\033[32m"      /* Bold Green */
 #define BOLDBLUE    "\033[1m\033[34m"      /* Bold Blue */
+#define BOLDRED     "\033[1m\033[31m"      /* Bold Red */
+#define RED         "\033[31m"
 #define RESET   "\033[0m"
 
-typedef enum {NONE, RECONNECT, CLOSE, FTREQ, FTREQP_C, FTREQN_C, USERNAME, NEWPROMPT} CMD; //commands received by client
+typedef enum {NONE, RECONNECT, CLOSE, FTREQ, FTREQP_C, USERNAME, NEWPROMPT} CMD; //commands received by client
 
 typedef enum {MSG, QUIT, NICK, MSGW, MSGALL, CREATE, LEAVE, JOIN, WHO, WHOIS, WHOINGROUP,GROUP, FTREQP_S, FTREQN_S, FTSUCCESS, SEND} S_CMD; //commands received by server
 

@@ -83,6 +83,18 @@ S_CMD get_command(char * buffer, int s_read){
   if(strncmp(buffer,"/whois ",7)==0 && strlen(buffer)>8)
     return WHOIS;
 
+  if(strncmp(buffer,"/send ",6)==0 && strlen(buffer)>7)
+    return SEND;
+
+  if(strncmp(buffer,"/ftreqP ",8)==0 && strlen(buffer)>9)
+    return FTREQP_S;
+
+  if(strncmp(buffer,"/ftreqN ",8)==0 && strlen(buffer)>9)
+    return FTREQN_S;
+
+  if(strncmp(buffer,"/ftsuccess ",8)==0 && strlen(buffer)>9)
+    return FTSUCCESS;
+
   return MSG;
 }
 
@@ -95,6 +107,8 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     memset(nickw, 0, BUFFER_SIZE);
     char msg[BUFFER_SIZE];
     memset(nickw, 0, BUFFER_SIZE);
+    char file_name[BUFFER_SIZE];
+    memset(file_name, 0, BUFFER_SIZE);
     int c_sock = fd->fd;// sock client
     int i;
     int res;
@@ -296,17 +310,54 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         //check if user exists
         format_nick(buffer);// je sais pas si c'est nécessaire
         separate(buffer);
-        printf("> [%s] \n", nick);
+        printf("> [%s] ", nick);
         if(exists(*clients, buffer)){
           printf("Requested info on %s.\n", buffer);
           get_info(*clients, buffer, buffer);
           writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
+          break;
         }
         else{
           printf("Requested info on non-existent user %s.\n", buffer);
           writeline(c_sock,"Server","", "This user doesn't exist.", BUFFER_SIZE);
+          break;
         }
-      }
+
+      case SEND :
+        separate(buffer);
+        get_next_arg(buffer, nickw);
+        get_next_arg(buffer, file_name);
+        w_sock = get_fd_client_by_name(*clients, nickw);
+        if(w_sock<0){
+          writeline(c_sock, "Server", "", "Specified user does not exist.", BUFFER_SIZE);
+          break;
+        }
+        memset(buffer, 0, BUFFER_SIZE);
+        sprintf(buffer, "Waiting for %s to acknowledge your file transfer request...", nickw);
+        writeline(c_sock, "Server", "", buffer, BUFFER_SIZE);
+        memset(buffer, 0, BUFFER_SIZE);
+        sprintf(buffer, "/ftreq %s %s", nick, file_name);
+        writeline(w_sock, "", "", buffer, BUFFER_SIZE);
+        break;
+
+      case FTREQN_S :
+        separate(buffer);
+        get_next_arg(buffer, nickw);
+        w_sock = get_fd_client_by_name(*clients, nickw);
+        memset(buffer, 0, BUFFER_SIZE);
+        sprintf(buffer, "User %s has declined your file transfer request.", nick);
+        writeline(w_sock, "", "", buffer, BUFFER_SIZE);
+        break;
+
+      case FTREQP_S :
+        separate(buffer);
+        get_next_arg(buffer, nickw);
+        w_sock = get_fd_client_by_name(*clients, nickw);
+        memset(buffer, 0, BUFFER_SIZE);
+        sprintf(buffer, "/ftreqP %s", nick);
+        writeline(w_sock, "", "", buffer, BUFFER_SIZE);
+        break;
+    }
 
   /*if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5){
     writeline(c_sock,"> Client connected\n",BUFFER_SIZE);
@@ -403,7 +454,7 @@ int main(int argc, char** argv)
           c_sock = do_accept(sock, c_addr, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
           add_client_to_list(&clients, c_sock, inet_ntoa( ((struct sockaddr_in * ) c_addr)->sin_addr)/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
-          printf("> Connection accepted ");
+          printf("> Connection accepted \n");
           writeline(c_sock,"Server","", "Welcome to the server. Please use /nick <your_pseudo> to login", BUFFER_SIZE);  // welcome message for the client
         }
 

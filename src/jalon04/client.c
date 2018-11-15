@@ -80,11 +80,10 @@ CMD handle_server_response(int sock, char buffer[]){
   }
   else if(buffer[0]=='/'){
     get_next_arg(buffer, buffer2);
-    if(strncmp(buffer2,"/ftreq",6)==0) return FTREQ;
-    if(strncmp(buffer2, "/ftreqP", 7)==0) return FTREQP_C;
-    if(strncmp(buffer2, "/ftreqN", 7)==0) return FTREQN_C;
-    if(strncmp(buffer2, "/username", 9)==0) return USERNAME;
-    if(strncmp(buffer2, "/newprompt", 10)==0) return NEWPROMPT;
+    if(strcmp(buffer2,"/ftreq")==0) return FTREQ;
+    if(strcmp(buffer2, "/ftreqP")==0) return FTREQP_C;
+    if(strcmp(buffer2, "/username")==0) return USERNAME;
+    if(strcmp(buffer2, "/newprompt")==0) return NEWPROMPT;
     sprintf(buffer,"ERROR client received unrecognized command %s from server", buffer2);
     error(buffer);
   }
@@ -100,24 +99,29 @@ int prompt_user_for_file_transfer(char buffer[], int sock){
   char user_name[BUFFER_SIZE];
   memset(user_name, 0, BUFFER_SIZE);
 
-  get_next_arg(buffer, file_name);
   get_next_arg(buffer, user_name);
+  get_next_arg(buffer, file_name);
 
   while(1){
-    printf("> %s wants to send file %s to you. Do you accept ? (y/n)\n", user_name);
+    printf("> %s wants to send file %s to you. Do you accept ? (y/n)\n", user_name, file_name );
     readline(0,buffer,BUFFER_SIZE);
     if(strncmp(buffer,"y",1)==0){
       memset(buffer, 0, BUFFER_SIZE);
       sprintf(buffer, "/ftreqP %s", user_name);
-      writeline(sock,"","",buffer, BUFFER_SIZE);
+      writeline(sock,"","", buffer, BUFFER_SIZE);
+      return 1;
     }
     if(strncmp(buffer,"n",1)==0){
       memset(buffer, 0, BUFFER_SIZE);
       sprintf(buffer, "/ftreqN %s", user_name);
-      writeline(sock,"","",buffer, BUFFER_SIZE);
+      writeline(sock,"","", buffer, BUFFER_SIZE);
+      return 0;
     }
   }
-  return 0;
+}
+
+int set_up_peer_2_peer_file_transfer(){
+  printf("Suck my weewee\n");
 }
 
 int main(int argc,char** argv) {
@@ -174,22 +178,31 @@ int main(int argc,char** argv) {
             sock = do_socket();
             do_connect(sock, res->ai_addr, res->ai_addrlen);
             break;
+
           case CLOSE:
             freeaddrinfo(res); //no longer needed
             close(sock);
             cont=0;
             break;
+
           case FTREQ: //ask user if he wants to accept file connection
-            prompt_user_for_file_transfer(buffer, sock);
+            if(1==prompt_user_for_file_transfer(buffer, sock)) set_up_peer_2_peer_file_transfer();
             break;
+
+          case FTREQP_C:
+            printf("setting up connection to client\n");
+
           case USERNAME:
             get_next_arg(buffer, nick); //update nick
             printf("%s", buffer);
             break;
+
           case NEWPROMPT:
             break;
+
           case NONE:
             break;
+
           default:
             error("Unrecognized client-side command");
         }
