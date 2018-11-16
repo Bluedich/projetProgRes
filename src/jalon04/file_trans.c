@@ -114,24 +114,25 @@ int send_file( char *path, int fd_rcv_file){
       to_send-=sent;
       i++;
     }
+    // printf("%d bits sent over %d\n",total_sent,total_to_send);
     if (to_send !=0) error("ERROR writing line, everyhthing is not write");
     total_sent = total_sent + read;
     i=0;
     read = 0;
     // sprintf(temp,""); les deux lignes font la même choses
     memset(temp, 0, BUFFER_SIZE);
-    printf("%d bits sent over %d\n",total_sent,total_to_send);
+    // printf("%d bits sent over %d\n",total_sent,total_to_send);
   }
   fclose(fichier);
 }
 
-int accept_file(char *path){
+int accept_file(char *namefile){    // test if the file can be store
   FILE * fichier;
   char * buffer = malloc(sizeof(char)*BUFFER_SIZE);
   memset(buffer, 0, BUFFER_SIZE);
   char * local_path = malloc(sizeof(char)*BUFFER_SIZE);
   memset(local_path, 0, BUFFER_SIZE);
-  sprintf(local_path,"../../inbox/%s",path);
+  sprintf(local_path,"../../inbox/%s",namefile);
   fichier = fopen(local_path,"r");
   int m=-1;
   if (fichier){
@@ -139,6 +140,7 @@ int accept_file(char *path){
     while(1){
       printf("> You already have a file with this name, do you want to overwrite it ? (y/n)\n");
       sprintf(buffer,"");
+      // memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
       readline(0,buffer,BUFFER_SIZE);
       if(strncmp(buffer,"y",1)==0){
         break;
@@ -147,11 +149,13 @@ int accept_file(char *path){
         while(1){
           printf("> Do you want to save the file with an other name (if you respond n, you dined the transfer) ? (y/n)\n");
           sprintf(buffer,"");
+          // memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
           readline(0,buffer,BUFFER_SIZE);
           if(strncmp(buffer,"y",1)==0){
             printf("> Please enter the name of the file\n");
             while(m!=0){
               sprintf(buffer,"");
+              // memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
               readline(0,buffer,BUFFER_SIZE);
               if (format_name_file(buffer)==-1){
                 printf("> Do not enter a path, your file will be download in your inbox repository\n");
@@ -168,8 +172,9 @@ int accept_file(char *path){
                 }
               }
             }
-            sprintf(path,"");
-            sprintf(path,"%s",buffer);
+            sprintf(namefile,"");
+            // memset(path, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
+            sprintf(namefile,"%s",buffer);
             return 0;
           }
           if(strncmp(buffer,"n",1)==0){
@@ -216,7 +221,7 @@ int rcv_file(char * path, int fd_rcv_file, int size){
   // read = 0;
     memset(buffer, 0, BUFFER_SIZE);
     read = readline(fd_rcv_file, buffer, BUFFER_SIZE);
-    fill_file(buffer,local_path,read);
+    fill_file(buffer,local_path,read);      // read is the number of bits read from the socket to write in the file in each passage on the loop
     nb_read=nb_read+read;
   }
 }

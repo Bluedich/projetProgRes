@@ -26,11 +26,46 @@ void get_addr_info(const char* addr, const char* port, struct addrinfo** res){
   }
 }
 
+void get_addr_info6(const char* addr, const char* port, struct addrinfo** res){
+  assert(res);
+  int status;
+  struct addrinfo hints;
+
+  memset(&hints,0,sizeof(hints));
+
+  hints.ai_family=AF_INET6;
+  hints.ai_socktype=SOCK_STREAM;
+
+  status = getaddrinfo(addr,port,&hints,res);
+  if(status!=0){
+    printf("getaddrinfo: returns %d aka %s\n", status, gai_strerror(status)); //fonction qui renvoie un message en rapport avec l'erreur détectée
+    exit(1);
+  }
+}
+
 int do_socket() {
     int sockfd;
     int yes = 1;
     //create the socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    //check for socket validity
+    if(sockfd==-1){
+      error("ERROR creating socket");
+    }
+    printf("> Socket created.\n");
+    // set socket option, to prevent "already in use" issue when rebooting the server right on
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+        error("ERROR setting socket options");
+
+    return sockfd;
+}
+
+int do_socket6() {
+    int sockfd;
+    int yes = 1;
+    //create the socket
+    sockfd = socket(AF_INET6, SOCK_STREAM, 0);
 
     //check for socket validity
     if(sockfd==-1){
@@ -131,15 +166,29 @@ int main(int argc,char** argv) {
         printf("usage: RE216_CLIENT hostname port\n");
         return 1;
     }
-
+    int IPv6 = 0;
+    if(strlen(argv[2])>5){ // test bidon pour savoir si on est en v6
+      IPv6=1;
+    }
     struct addrinfo* res;
-    //get address info from the server
-    get_addr_info(argv[1], argv[2], &res);
+    int sock;
 
-    //get the socket
-    int sock = do_socket();
-    //connect to remote socket
-    do_connect(sock, res->ai_addr, res->ai_addrlen);
+    if(IPv6==0){
+      //get address info from the server
+      get_addr_info(argv[1], argv[2], &res);
+      //get the socket
+      sock = do_socket();
+      //connect to remote socket
+      do_connect(sock, res->ai_addr, res->ai_addrlen);
+    }
+    else{
+      //get address info from the server
+      get_addr_info6(argv[1], argv[2], &res);
+      //get the socket
+      sock = do_socket6();
+      //connect to remote socket
+      do_connect(sock, res->ai_addr, res->ai_addrlen);
+    }
 
     char buffer[BUFFER_SIZE];
     char buffer2[BUFFER_SIZE];

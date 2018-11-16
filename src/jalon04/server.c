@@ -24,11 +24,35 @@ int do_socket(){
   return fd;
 }
 
+int do_socket6(){
+  int fd = socket(AF_INET6, SOCK_STREAM, 0);
+  if(fd == -1)
+    error("ERROR creating socket");
+  int yes = 1;
+  // set socket option, to prevent "already in use" issue when rebooting the server right on
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+      error("ERROR setting socket options");
+  return fd;
+}
+
 void init_serv_addr(int port, struct sockaddr_in * s_addr){
   s_addr->sin_family = AF_INET;
   s_addr->sin_port = htons(port);
   s_addr->sin_addr.s_addr = INADDR_ANY;
 }
+
+void init_serv_addr6(int port, struct sockaddr_in6 * s_addr){
+  s_addr->sin6_family = AF_INET6;
+  s_addr->sin6_port = htons(port);
+   s_addr->sin6_addr = in6addr_any;
+}
+
+void do_bind6(int sock, struct sockaddr_in6 * s_addr){
+  assert(s_addr);
+  if (bind(sock, (const struct sockaddr *) s_addr, sizeof(*s_addr)) == -1)
+    error("ERROR binding");
+}
+
 
 void do_bind(int sock, struct sockaddr_in * s_addr){
   assert(s_addr);
@@ -381,29 +405,50 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
   return 0;*/
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv){
     if (argc != 2)
     {
         printf("usage: RE216_SERVER port\n");
         return 1;
     }
-    //create the socket, check for validity!
-    int sock = do_socket(sock);
-
+    int IPv6=0;
     //init the serv_addr structure
+    struct sockaddr_in6 s_addr6;
     struct sockaddr_in s_addr;
-    memset(&s_addr, 0, sizeof(s_addr));
-    init_serv_addr(atoi(argv[1]), &s_addr);
 
-    //perform the binding
-    //we bind on the tcp port specified
+    //create the socket, check for validity!
+    int sock;
 
-    do_bind(sock, &s_addr);
+    if(strlen(argv[1])>5){ // test bidon pour savoir si on est en v6
+      IPv6=1;
+      printf("C'est de l'IPv6\n");
+      memset(&s_addr6, 0, sizeof(s_addr6));
+      init_serv_addr6(atoi(argv[1]), &s_addr6);
+      printf("Et on a intialisé le server\n");
 
-    //specify the socket to be a server socket
-    listen(sock, MAX_CL);
-    printf("> Waiting for connection : \n");
+      //perform the binding
+      //we bind on the tcp port specified
+      sock = do_socket6(sock);
+      do_bind6(sock, &s_addr6);
+      printf("Le binding\n");
+
+      //specify the socket to be a server socket
+      listen(sock, MAX_CL);
+      printf("> Waiting for connection v6 : \n");
+      }
+    else {
+      memset(&s_addr, 0, sizeof(s_addr));
+      init_serv_addr(atoi(argv[1]), &s_addr);
+
+      //perform the binding
+      //we bind on the tcp port specified
+      sock = do_socket(sock);
+      do_bind(sock, &s_addr);
+
+      //specify the socket to be a server socket
+      listen(sock, MAX_CL);
+      printf("> Waiting for connection : \n");
+    }
 
     //buffer init
     char * in_buf = (char *) malloc(6*sizeof(char));
@@ -422,6 +467,7 @@ int main(int argc, char** argv)
     fds[0].events = POLLIN;
 
     fds[1].fd = sock;
+
     fds[1].events = POLLIN;
 
     int i;
