@@ -44,7 +44,7 @@ void init_serv_addr(int port, struct sockaddr_in * s_addr){
 void init_serv_addr6(int port, struct sockaddr_in6 * s_addr){
   s_addr->sin6_family = AF_INET6;
   s_addr->sin6_port = htons(port);
-   s_addr->sin6_addr = in6addr_any;
+  s_addr->sin6_addr = in6addr_any;
 }
 
 void do_bind6(int sock, struct sockaddr_in6 * s_addr){
@@ -421,6 +421,9 @@ int main(int argc, char** argv){
 
     if(strlen(argv[1])>5){ // test bidon pour savoir si on est en v6
       IPv6=1;
+    }
+    IPv6=1; // Normalement quant on est en IPv6 c'est compatible ipv4, sauf pour l'adresse IP du client quand il se connecte
+    if(IPv6==1){
       printf("C'est de l'IPv6\n");
       memset(&s_addr6, 0, sizeof(s_addr6));
       init_serv_addr6(atoi(argv[1]), &s_addr6);
@@ -453,6 +456,9 @@ int main(int argc, char** argv){
     //buffer init
     char * in_buf = (char *) malloc(6*sizeof(char));
     char buffer[BUFFER_SIZE];
+
+    char adresse[INET6_ADDRSTRLEN];
+
     struct sockaddr * c_addr = (struct sockaddr *) malloc(sizeof(struct sockaddr));
     int c_addrlen;
     int c_sock;
@@ -499,7 +505,24 @@ int main(int argc, char** argv){
           memset(c_addr, 0, sizeof(*c_addr));
           c_sock = do_accept(sock, c_addr, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
-          add_client_to_list(&clients, c_sock, inet_ntoa( ((struct sockaddr_in * ) c_addr)->sin_addr)/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
+          switch(c_addr->sa_family) {
+            case AF_INET:
+              inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
+              printf("Tentative of connection from ipv4 adress : %s\n",adresse);
+              break;
+            case AF_INET6:
+              inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)c_addr)->sin6_addr),adresse, INET6_ADDRSTRLEN);
+              printf("Tentative of connection from ipv6 adress: %s\n",adresse);
+              break;
+            default:
+              strncpy(adresse, "Unknown AF", INET6_ADDRSTRLEN);
+              printf("Tentative of connection from Unknown protocol : %s\n",adresse);
+              }
+          // add_client_to_list(&clients, c_sock, inet_ntoa( ((struct sockaddr_in * ) c_addr)->sin_addr)/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
+          // inet_ntop( AF_INET,&(((struct sockaddr_in *)c_addr)->sin_addr),adresse,INET_ADDRSTRLEN); // foes not work
+          // void * restrict src = &((struct sockaddr_in6 *) c_addr)->sin6_addr;
+          // inet_ntop( AF_INET6, ((struct sockaddr_in6 *) c_addr),adresse,INET6_ADDRSTRLEN); // foes not work
+          add_client_to_list(&clients, c_sock, adresse/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
           printf("> Connection accepted \n");
           writeline(c_sock,"Server","", "Welcome to the server. Please use /nick <your_pseudo> to login", BUFFER_SIZE);  // welcome message for the client
         }

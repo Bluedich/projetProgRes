@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <poll.h>
+#include <arpa/inet.h>
 
 void get_addr_info(const char* addr, const char* port, struct addrinfo** res){
   assert(res);
@@ -33,8 +34,9 @@ void get_addr_info6(const char* addr, const char* port, struct addrinfo** res){
 
   memset(&hints,0,sizeof(hints));
 
-  hints.ai_family=AF_INET6;
+  hints.ai_family=AF_UNSPEC;
   hints.ai_socktype=SOCK_STREAM;
+  // hints.ai_flags |= AI_NUMERICHOST; // fait que localhost ne marche plus
 
   status = getaddrinfo(addr,port,&hints,res);
   if(status!=0){
@@ -61,11 +63,11 @@ int do_socket() {
     return sockfd;
 }
 
-int do_socket6() {
+int do_socket6(struct addrinfo* res) {
     int sockfd;
     int yes = 1;
     //create the socket
-    sockfd = socket(AF_INET6, SOCK_STREAM, 0);
+    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
     //check for socket validity
     if(sockfd==-1){
@@ -166,29 +168,30 @@ int main(int argc,char** argv) {
         printf("usage: RE216_CLIENT hostname port\n");
         return 1;
     }
-    int IPv6 = 0;
-    if(strlen(argv[2])>5){ // test bidon pour savoir si on est en v6
-      IPv6=1;
-    }
     struct addrinfo* res;
     int sock;
+    struct sockaddr_in6 * c_addr;
+    struct in6_addr serveraddr;
+    int addrlen= sizeof(c_addr);
 
-    if(IPv6==0){
-      //get address info from the server
-      get_addr_info(argv[1], argv[2], &res);
-      //get the socket
-      sock = do_socket();
-      //connect to remote socket
-      do_connect(sock, res->ai_addr, res->ai_addrlen);
-    }
-    else{
-      //get address info from the server
-      get_addr_info6(argv[1], argv[2], &res);
-      //get the socket
-      sock = do_socket6();
-      //connect to remote socket
-      do_connect(sock, res->ai_addr, res->ai_addrlen);
-    }
+    //get address info from the server
+    get_addr_info6(argv[1], argv[2], &res);
+    //get the socket
+    sock = do_socket6(res);
+    //connect to remote socket
+    switch(res->ai_addr->sa_family){
+      case AF_INET:
+        printf("> protocole used : IPv4\n");
+        break;
+      case AF_INET6:
+        printf("> protocole used : IPv6\n");
+        break;
+      default:
+      printf("> protocole used : Unknown\n");
+        break;
+      }
+    do_connect(sock, res->ai_addr, res->ai_addrlen);
+
 
     char buffer[BUFFER_SIZE];
     char buffer2[BUFFER_SIZE];
