@@ -227,7 +227,7 @@ int main(int argc,char** argv) {
         switch(cmd){
           case RECONNECT: //try to reconnect to server
             close(sock);
-            sock = do_socket();
+            sock = do_socket6(res);
             do_connect(sock, res->ai_addr, res->ai_addrlen);
             break;
 
