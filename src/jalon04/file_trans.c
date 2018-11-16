@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 
 /*
@@ -44,8 +45,8 @@ int readline(int fd, char * buffer, int maxlen){
   }
   return size_read;
 }
-*/
 
+*/
 int format_name_file( char *name){
   int i;
   for ( i = 0; i < strlen(name); i++) {
@@ -117,7 +118,9 @@ int send_file( char *path, int fd_rcv_file){
     total_sent = total_sent + read;
     i=0;
     read = 0;
-    sprintf(temp,"");
+    // sprintf(temp,""); les deux lignes font la même choses
+    memset(temp, 0, BUFFER_SIZE);
+    printf("%d bits sent over %d\n",total_sent,total_to_send);
   }
   fclose(fichier);
 }
@@ -220,18 +223,17 @@ int rcv_file(char * path, int fd_rcv_file, int size){
 
 /*
 int main(int argc, char * argv[]){
-  FILE * fichier;
-  fichier = fopen("./tata.txt","w+");
-  fclose(fichier);
-  int fd_file = open("./tata.txt",O_RDWR);
+  int pipefd[2];
+  int caca = pipe(pipefd);
 
   char * name = malloc(sizeof(char)*BUFFER_SIZE);
   memset(name, 0, BUFFER_SIZE);
   sprintf(name,"./toto.txt");
-  send_file(name,fd_file);
   printf("Fichier de %d bits\n",size_of_file("toto.txt"));
+  send_file(name,pipefd[1]);
+  printf("Fichier de %d bits sent !\n",size_of_file("toto.txt"));
 
-  rcv_file(name, fd_file,size_of_file("toto.txt"));
+  rcv_file(name, pipefd[0],size_of_file("toto.txt"));
 
 }
 */
