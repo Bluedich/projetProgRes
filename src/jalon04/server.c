@@ -505,19 +505,29 @@ int main(int argc, char** argv){
           memset(c_addr, 0, sizeof(*c_addr));
           c_sock = do_accept(sock, c_addr, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
+          memset(buffer, 0, BUFFER_SIZE);
+          readline(c_sock, buffer, BUFFER_SIZE);
           switch(c_addr->sa_family) {
             case AF_INET:
+              inet_pton(AF_INET, buffer, &(((struct sockaddr_in *)c_addr)->sin_addr));
               inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
-              printf("Tentative of connection from ipv4 adress : %s\n",adresse);
+              // printf("Tentative of connection from ipv4 adress : %s\n",adresse);
               break;
             case AF_INET6:
+              inet_pton(AF_INET6, buffer, &(((struct sockaddr_in6 *)c_addr)->sin6_addr));
               inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)c_addr)->sin6_addr),adresse, INET6_ADDRSTRLEN);
-              printf("Tentative of connection from ipv6 adress: %s\n",adresse);
+              // printf("Tentative of connection from ipv6 adress: %s\n",adresse);
               break;
             default:
-              strncpy(adresse, "Unknown AF", INET6_ADDRSTRLEN);
-              printf("Tentative of connection from Unknown protocol : %s\n",adresse);
+              strncpy(buffer, "Unknown AF", INET6_ADDRSTRLEN);
+              // printf("Tentative of connection from Unknown protocol : %s\n",adresse);
               }
+          if(strcmp(adresse,"::")==0){
+            inet_pton(AF_INET, buffer, &(((struct sockaddr_in *)c_addr)->sin_addr));
+            inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
+            // printf("ERROR, IPv4 adress used : %s\n",adresse);
+          }
+
           // add_client_to_list(&clients, c_sock, inet_ntoa( ((struct sockaddr_in * ) c_addr)->sin_addr)/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
           // inet_ntop( AF_INET,&(((struct sockaddr_in *)c_addr)->sin_addr),adresse,INET_ADDRSTRLEN); // foes not work
           // void * restrict src = &((struct sockaddr_in6 *) c_addr)->sin6_addr;

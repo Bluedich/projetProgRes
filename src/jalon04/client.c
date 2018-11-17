@@ -35,7 +35,8 @@ void get_addr_info6(const char* addr, const char* port, struct addrinfo** res){
   memset(&hints,0,sizeof(hints));
 
   hints.ai_family=AF_UNSPEC;
-  hints.ai_socktype=SOCK_STREAM;
+  hints.ai_socktype=0;
+  // hints.ai_socktype=SOCK_STREAM;
   // hints.ai_flags |= AI_NUMERICHOST; // fait que localhost ne marche plus
 
   status = getaddrinfo(addr,port,&hints,res);
@@ -191,6 +192,7 @@ int main(int argc,char** argv) {
         break;
       }
     do_connect(sock, res->ai_addr, res->ai_addrlen);
+    write(sock,argv[1],BUFFER_SIZE);
 
 
     char buffer[BUFFER_SIZE];
