@@ -1,14 +1,7 @@
 #include "common.h"
-#include <stdlib.h>
-#include <assert.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include "file_trans.h"
+
 #include <netdb.h>
-#include <poll.h>
-#include <arpa/inet.h>
 
 void get_addr_info(const char* addr, const char* port, struct addrinfo** res){
   assert(res);
@@ -56,7 +49,6 @@ int do_socket() {
     if(sockfd==-1){
       error("ERROR creating socket");
     }
-    printf("> Socket created.\n");
     // set socket option, to prevent "already in use" issue when rebooting the server right on
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
         error("ERROR setting socket options");
@@ -74,7 +66,6 @@ int do_socket6(struct addrinfo* res) {
     if(sockfd==-1){
       error("ERROR creating socket");
     }
-    printf("> Socket created.\n");
     // set socket option, to prevent "already in use" issue when rebooting the server right on
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
         error("ERROR setting socket options");
@@ -88,7 +79,6 @@ void do_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
   if (res != 0) {
     error("ERROR connecting");
   }
-  printf("> Connected to host.\n");
 }
 
 void handle_client_message(int sock, char * buffer, int * cont){
@@ -119,9 +109,9 @@ CMD handle_server_response(int sock, char buffer[]){
   else if(buffer[0]=='/'){
     get_next_arg(buffer, buffer2);
     if(strcmp(buffer2,"/ftreq")==0) return FTREQ;
-    if(strcmp(buffer2, "/ftreqP")==0) return FTREQP_C;
     if(strcmp(buffer2, "/username")==0) return USERNAME;
     if(strcmp(buffer2, "/newprompt")==0) return NEWPROMPT;
+    if(strcmp(buffer2, "/info_conn")==0) return INFO_CONN;
     sprintf(buffer,"ERROR client received unrecognized command %s from server", buffer2);
     error(buffer);
   }
@@ -131,15 +121,8 @@ CMD handle_server_response(int sock, char buffer[]){
   }
 }
 
-int prompt_user_for_file_transfer(char buffer[], int sock){
-  char file_name[BUFFER_SIZE];
-  memset(file_name, 0, BUFFER_SIZE);
-  char user_name[BUFFER_SIZE];
-  memset(user_name, 0, BUFFER_SIZE);
-
-  get_next_arg(buffer, user_name);
-  get_next_arg(buffer, file_name);
-
+int prompt_user_for_file_transfer(char user_name[], char file_name[], int sock){
+  char buffer[BUFFER_SIZE];
   while(1){
     printf("> %s wants to send file %s to you. Do you accept ? (y/n)\n", user_name, file_name );
     readline(0,buffer,BUFFER_SIZE);
@@ -158,8 +141,65 @@ int prompt_user_for_file_transfer(char buffer[], int sock){
   }
 }
 
-int set_up_peer_2_peer_file_transfer(){
-  printf("Suck my weewee\n");
+int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
+  printf("Preparing to send file\n");
+  char ipAddr[INET_ADDRSTRLEN];
+  char portNum[BUFFER_SIZE];
+  //memset(portNum,0,BUFFER_SIZE);
+  char user_name[BUFFER_SIZE];
+  //memset(user_name,0,BUFFER_SIZE);
+  char file_name[BUFFER_SIZE];
+  //memset(file_name,0,BUFFER_SIZE);
+  char file_size[BUFFER_SIZE];
+  int f_size;
+  //receive connection information
+  get_next_arg(buffer, user_name);
+  get_next_arg(buffer, ipAddr);
+  get_next_arg(buffer, portNum);
+  get_next_arg(buffer, file_size);
+  get_next_arg(buffer, file_name);
+  f_size = atoi(file_size);
+  //get address info from the server
+  struct addrinfo* res;
+  get_addr_info6(ipAddr, portNum, &res);
+  //get the socket
+  int c_sock;
+  c_sock = do_socket6(res);
+  //connect to remote socket
+  do_connect(c_sock, res->ai_addr, res->ai_addrlen);
+  readline(c_sock, buffer, BUFFER_SIZE);
+  printf("%s", buffer);
+  send_file(file_name, c_sock);
+}
+
+int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], char file_name[]){
+  printf("Preparing to receive file\n");
+  char buffer[BUFFER_SIZE];
+  memset(buffer, 0, BUFFER_SIZE);
+  struct sockaddr_in s_addr;
+  int s_sock = do_socket();
+  struct sockaddr * c_addr = (struct sockaddr *) malloc(sizeof(struct sockaddr));
+  int c_addrlen = (int) sizeof(*c_addr);
+  int c_sock;
+  memset(&s_addr, 0, sizeof(s_addr));
+  init_serv_addr(0, &s_addr);
+  do_bind(s_sock, &s_addr);
+  int s_addr_len = sizeof(s_addr);
+  getsockname(s_sock, (struct sockaddr*) &s_addr, (socklen_t *) &s_addr_len);
+  int port_num = (int) ntohs(s_addr.sin_port);
+  listen(s_sock, -1);
+  char ipAddress[INET_ADDRSTRLEN];
+  inet_ntop(AF_INET, &(s_addr.sin_addr), ipAddress, INET_ADDRSTRLEN);
+
+  //send connection info to other client
+  int file_size = size_of_file(file_name);
+  sprintf(buffer, "/conn_info %s %s %d %d %s\n", user_name, ipAddress, port_num, file_size, file_name); fflush(stdout);
+  writeline(sock,"","",buffer, BUFFER_SIZE);
+
+  //accept connection from client
+  c_sock = do_accept(s_sock, c_addr, &c_addrlen);
+  writeline(c_sock,nick,"peer2peer","Connected",9);
+  rcv_file(file_name, c_sock, file_size);
 }
 
 int main(int argc,char** argv) {
@@ -198,6 +238,10 @@ int main(int argc,char** argv) {
     char buffer[BUFFER_SIZE];
     char buffer2[BUFFER_SIZE];
     char nick[BUFFER_SIZE];
+    char file_name[BUFFER_SIZE];
+    memset(file_name, 0, BUFFER_SIZE);
+    char user_name[BUFFER_SIZE];
+    memset(user_name, 0, BUFFER_SIZE);
     strcpy(nick, "Guest");
     int cont=1;
     CMD cmd;
@@ -240,11 +284,14 @@ int main(int argc,char** argv) {
             break;
 
           case FTREQ: //ask user if he wants to accept file connection
-            if(1==prompt_user_for_file_transfer(buffer, sock)) set_up_peer_2_peer_file_transfer();
+            get_next_arg(buffer, user_name);
+            get_next_arg(buffer, file_name);
+            if(1==prompt_user_for_file_transfer(user_name, file_name, sock)) set_up_peer_2_peer_file_transfer(sock, nick, user_name, file_name);
             break;
 
-          case FTREQP_C:
-            printf("setting up connection to client\n");
+          case INFO_CONN:
+            connect_to_peer_2_peer(sock, nick, buffer);
+            break;
 
           case USERNAME:
             get_next_arg(buffer, nick); //update nick

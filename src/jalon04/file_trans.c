@@ -158,14 +158,14 @@ int accept_file(char *namefile){    // test if the file can be store
               // memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
               readline(0,buffer,BUFFER_SIZE);
               if (format_name_file(buffer)==-1){
-                printf("> Do not enter a path, your file will be download in your inbox repository\n");
+                printf("> Do not enter a path, your file will be downloaded in your inbox directory.\n");
               }
               else {
                 sprintf(local_path,"../../inbox/%s",buffer);
                 fichier = fopen(local_path,"r");
                 if (fichier){
                   fclose(fichier);
-                  printf("> Please use an other name, this one is already taken by an other file\n");
+                  printf("> Please use an other name, this one is already taken by an other file.\n");
                 }
                 else {
                   m=0;
@@ -226,8 +226,10 @@ int rcv_file(char * path, int fd_rcv_file, int size){
   }
 }
 
-/*
-int main(int argc, char * argv[]){
+
+/*int main(int argc, char * argv[]){
+  int f_size = size_of_file("~/helloworld.txt");
+  printf("%d\n", f_size);
   int pipefd[2];
   int caca = pipe(pipefd);
 
@@ -239,6 +241,4 @@ int main(int argc, char * argv[]){
   printf("Fichier de %d bits sent !\n",size_of_file("toto.txt"));
 
   rcv_file(name, pipefd[0],size_of_file("toto.txt"));
-
-}
-*/
+}*/

@@ -1,17 +1,9 @@
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <assert.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <poll.h>
-#include <arpa/inet.h>
-
 #include "common.h"
 #include "list.h"
 #include "group.h"
+#include "file_trans.h"
+
+#include <netinet/in.h>
 
 int do_socket(){
   int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -35,12 +27,6 @@ int do_socket6(){
   return fd;
 }
 
-void init_serv_addr(int port, struct sockaddr_in * s_addr){
-  s_addr->sin_family = AF_INET;
-  s_addr->sin_port = htons(port);
-  s_addr->sin_addr.s_addr = INADDR_ANY;
-}
-
 void init_serv_addr6(int port, struct sockaddr_in6 * s_addr){
   s_addr->sin6_family = AF_INET6;
   s_addr->sin6_port = htons(port);
@@ -51,19 +37,6 @@ void do_bind6(int sock, struct sockaddr_in6 * s_addr){
   assert(s_addr);
   if (bind(sock, (const struct sockaddr *) s_addr, sizeof(*s_addr)) == -1)
     error("ERROR binding");
-}
-
-
-void do_bind(int sock, struct sockaddr_in * s_addr){
-  assert(s_addr);
-  if (bind(sock, (const struct sockaddr *) s_addr, sizeof(*s_addr)) == -1)
-    error("ERROR binding");
-}
-
-int do_accept(int sock, struct sockaddr * c_addr, int * c_addrlen){
-  int c_sock = accept(sock, c_addr, c_addrlen);
-  if(c_sock == -1)
-    error("ERROR accepting");
 }
 
 int get_available_fd_index(struct pollfd * fds){
@@ -111,18 +84,23 @@ S_CMD get_command(char * buffer, int s_read){
     return SEND;
 
   if(strncmp(buffer,"/ftreqP ",8)==0 && strlen(buffer)>9)
-    return FTREQP_S;
+    return FTREQP;
 
   if(strncmp(buffer,"/ftreqN ",8)==0 && strlen(buffer)>9)
-    return FTREQN_S;
+    return FTREQN;
 
-  if(strncmp(buffer,"/ftsuccess ",8)==0 && strlen(buffer)>9)
+  if(strncmp(buffer,"/ftsuccess ",11)==0 && strlen(buffer)>12)
     return FTSUCCESS;
+
+  if(strncmp(buffer,"/conn_info ",11)==0 && strlen(buffer)>12)
+    return CONN_INFO;
 
   return MSG;
 }
 
 int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd, struct listg ** groups){
+    char buffer2[BUFFER_SIZE];
+    memset(buffer2, 0, BUFFER_SIZE);
     char nick[BUFFER_SIZE];
     memset(nick, 0, BUFFER_SIZE);
     char client_group[BUFFER_SIZE];
@@ -364,22 +342,31 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         writeline(w_sock, "", "", buffer, BUFFER_SIZE);
         break;
 
-      case FTREQN_S :
+      case FTREQN :
         separate(buffer);
         get_next_arg(buffer, nickw);
         w_sock = get_fd_client_by_name(*clients, nickw);
         memset(buffer, 0, BUFFER_SIZE);
         sprintf(buffer, "User %s has declined your file transfer request.", nick);
-        writeline(w_sock, "", "", buffer, BUFFER_SIZE);
+        writeline(w_sock, "Server", "", buffer, BUFFER_SIZE);
         break;
 
-      case FTREQP_S :
+      case FTREQP :
         separate(buffer);
         get_next_arg(buffer, nickw);
         w_sock = get_fd_client_by_name(*clients, nickw);
         memset(buffer, 0, BUFFER_SIZE);
-        sprintf(buffer, "/ftreqP %s", nick);
-        writeline(w_sock, "", "", buffer, BUFFER_SIZE);
+        sprintf(buffer, "User %s has accepted your file transfer request.", nick);
+        writeline(w_sock, "Server", "", buffer, BUFFER_SIZE);
+        break;
+
+      case CONN_INFO :
+        separate(buffer);
+        get_next_arg(buffer, nickw);
+        w_sock = get_fd_client_by_name(*clients, nickw);
+        sprintf(buffer2, "/info_conn %s %s", nick, buffer);
+        printf("Sent command : %s\n", buffer2);
+        writeline(w_sock, "", "", buffer2, BUFFER_SIZE);
         break;
     }
 
@@ -436,7 +423,7 @@ int main(int argc, char** argv){
       printf("Le binding\n");
 
       //specify the socket to be a server socket
-      listen(sock, MAX_CL);
+      listen(sock, -1);
       printf("> Waiting for connection v6 : \n");
       }
     else {
@@ -449,7 +436,7 @@ int main(int argc, char** argv){
       do_bind(sock, &s_addr);
 
       //specify the socket to be a server socket
-      listen(sock, MAX_CL);
+      listen(sock, -1);
       printf("> Waiting for connection : \n");
     }
 

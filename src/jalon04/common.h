@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <arpa/inet.h>
+#include <poll.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #define BUFFER_SIZE 1024
 #define MAX_NICK_SIZE 64
@@ -17,11 +21,17 @@
 #define RED         "\033[31m"
 #define RESET   "\033[0m"
 
-typedef enum {NONE, RECONNECT, CLOSE, FTREQ, FTREQP_C, USERNAME, NEWPROMPT} CMD; //commands received by client
+typedef enum {NONE, RECONNECT, CLOSE, FTREQ, USERNAME, NEWPROMPT, INFO_CONN} CMD; //commands received by client
 
-typedef enum {MSG, QUIT, NICK, MSGW, MSGALL, CREATE, LEAVE, JOIN, WHO, WHOIS, WHOINGROUP,GROUP, FTREQP_S, FTREQN_S, FTSUCCESS, SEND} S_CMD; //commands received by server
+typedef enum {MSG, QUIT, NICK, MSGW, MSGALL, CREATE, LEAVE, JOIN, WHO, WHOIS, WHOINGROUP,GROUP, FTREQP, FTREQN, FTSUCCESS, SEND, CONN_INFO} S_CMD; //commands received by server
 
 void error(const char *msg);
+
+int do_accept(int sock, struct sockaddr * c_addr, int * c_addrlen);
+
+void init_serv_addr(int port, struct sockaddr_in * s_addr);
+
+void do_bind(int sock, struct sockaddr_in * s_addr);
 
 int readline(int fd, char * buffer, int maxlen);
 

@@ -7,6 +7,12 @@ void error(const char *msg)
     exit(1);
 }
 
+void init_serv_addr(int port, struct sockaddr_in * s_addr){
+  s_addr->sin_family = AF_INET;
+  s_addr->sin_port = htons(port);
+  s_addr->sin_addr.s_addr = INADDR_ANY;
+}
+
 int readline(int fd, char * buffer, int maxlen){
   assert(buffer);
   memset(buffer, 0, maxlen);
@@ -15,6 +21,18 @@ int readline(int fd, char * buffer, int maxlen){
     error("ERROR reading line");
   }
   return size_read;
+}
+
+void do_bind(int sock, struct sockaddr_in * s_addr){
+  assert(s_addr);
+  if (bind(sock, (const struct sockaddr *) s_addr, sizeof(*s_addr)) == -1)
+    error("ERROR binding");
+}
+
+int do_accept(int sock, struct sockaddr * c_addr, int * c_addrlen){
+  int c_sock = accept(sock, c_addr, c_addrlen);
+  if(c_sock == -1)
+    error("ERROR accepting");
 }
 
 int separate(char buffer[]){
