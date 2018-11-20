@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+
 #define BUFFER_SIZE 1024
 #define MAX_NICK_SIZE 64
 #define MAX_CL 20

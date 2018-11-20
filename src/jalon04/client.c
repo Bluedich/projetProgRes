@@ -1,6 +1,6 @@
 #include "common.h"
 #include "file_trans.h"
-
+#include <pthread.h>
 #include <netdb.h>
 
 void get_addr_info(const char* addr, const char* port, struct addrinfo** res){
@@ -190,13 +190,35 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   return 0;
 }
 
-int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], char file_name[],char f_size[]){
+struct argthread{
+  int sock;
+  char nick[BUFFER_SIZE];
+  char user_name[BUFFER_SIZE];
+  char file_name[BUFFER_SIZE];
+  char file_size[BUFFER_SIZE];
+};
+
+void * set_up_peer_2_peer_file_transfer(void * arg1){
   printf("Preparing to receive file\n");
   char buffer[BUFFER_SIZE];
   memset(buffer, 0, BUFFER_SIZE);
+  struct argthread* arg = arg1;
+  int file_size = atoi( arg->file_size);
+  int sock = arg->sock;
+  char nick[BUFFER_SIZE];
+  memset(nick, 0, BUFFER_SIZE);
+  strcpy(nick,arg->nick);
+  char user_name[BUFFER_SIZE];
+  memset(user_name, 0, BUFFER_SIZE);
+  strcpy(user_name,arg->user_name);
+  char file_name[BUFFER_SIZE];
+  memset(file_name, 0, BUFFER_SIZE);
+  strcpy(file_name,arg->file_name);
+  // char buffer[BUFFER_SIZE];
+  // memset(buffer, 0, BUFFER_SIZE);
+
   struct sockaddr_in s_addr;
   int s_sock = do_socket();
-  int file_size = atoi(f_size);
   struct sockaddr * c_addr = (struct sockaddr *) malloc(sizeof(struct sockaddr));
   int c_addrlen = (int) sizeof(*c_addr);
   int c_sock;
@@ -219,8 +241,17 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   c_sock = do_accept(s_sock, c_addr, &c_addrlen);
   writeline(c_sock,nick,"peer2peer","Connected",9);
   rcv_file(file_name, c_sock, file_size);
-  // exit(0);
+  // exit();
+  return NULL;
 }
+
+// struct argthread{
+//   int sock;
+//   char nick[BUFFER_SIZE];
+//   char user_name[BUFFER_SIZE];
+//   char file_name[BUFFER_SIZE];
+//   char file_size[BUFFER_SIZE];
+// };
 
 int main(int argc,char** argv) {
 
@@ -254,7 +285,8 @@ int main(int argc,char** argv) {
     do_connect(sock, res->ai_addr, res->ai_addrlen);
     write(sock,argv[1],BUFFER_SIZE);
 
-
+    struct argthread* arg1;
+    pthread_t * thread;
     char buffer[BUFFER_SIZE];
     char buffer2[BUFFER_SIZE];
     char nick[BUFFER_SIZE];
@@ -267,6 +299,7 @@ int main(int argc,char** argv) {
     strcpy(nick, "Guest");
     int cont=1;
     int pid=0;
+    int v_temp=0;
     CMD cmd;
     struct pollfd fds[2];
 
@@ -309,10 +342,15 @@ int main(int argc,char** argv) {
           case FTREQ: //ask user if he wants to accept file connection
             // pid = fork();
             // if (pid ==0){
-              get_next_arg(buffer, user_name);
-              get_next_arg(buffer, file_name);
-              get_next_arg(buffer, file_size);
-              if(1==prompt_user_for_file_transfer(user_name, file_name,file_size, sock)) set_up_peer_2_peer_file_transfer(sock, nick, user_name, file_name,file_size);
+              arg1->sock = sock;
+              strcpy(arg1->nick,nick);
+              get_next_arg(buffer, arg1->user_name);
+              get_next_arg(buffer, arg1->file_name);
+              get_next_arg(buffer, arg1->file_size);
+              if(1==prompt_user_for_file_transfer(user_name, file_name,file_size, sock)){
+               // v_temp = pthread_create(thread,NULL, set_up_peer_2_peer_file_transfer(sock, nick, user_name, file_name,file_size);
+               v_temp = pthread_create(thread,NULL, set_up_peer_2_peer_file_transfer,(void *) arg1);
+             }
               break;
             // }
             // break;

@@ -6,5 +6,5 @@ mkdir build
 rm -rf inbox
 mkdir inbox
 cd build
-cmake -G"Eclipse CDT4 - Unix Makefiles" -D CMAKE_BUILD_TYPE=Debug ../src/
+cmake -G"Eclipse CDT4 - Unix Makefiles" -D  CMAKE_BUILD_TYPE=Debug ../src/
 make
