@@ -71,8 +71,12 @@ int path_to_name(char * path, char *name){
     }
     i++;
   }
-
-  strcpy(name,path+j+1);
+  while( i<strlen(path) -2 ){
+    (strncpy(name,path+i+j+i,1));
+    i++;
+  }
+  // strcpy(name,path+j+1);
+  // strncpy(name,"\0",strlen(name));
   return 0;
 }
 
@@ -91,16 +95,20 @@ int size_of_file(char *path){
 }
 
 int send_file( char *path, int fd_rcv_file){
-  FILE * fichier;
-  fichier = fopen(path,"r+");
+  int total_to_send=size_of_file(path); // comme cela ou en argument
+  if (total_to_send == 0){
+    printf("The file is empty, transfer dined\n");
+    return -1;
+  }
   int read = 0;
   int i = 0;
   int to_send;
-  int total_to_send=size_of_file(path); // comme cela ou en argument
   int total_sent=0;
   int sent;
   char * temp = malloc(sizeof(char)*BUFFER_SIZE);
   memset(temp, 0, BUFFER_SIZE);
+  FILE * fichier;
+  fichier = fopen(path,"r+");
   while(total_sent<total_to_send){ // tant que y'a des truck dans le fichier
     while(read<BUFFER_SIZE && i<1000){ // tant que l'on a pas lu BUFFER_SIZE octet
         read = read+fread(temp,sizeof(char),BUFFER_SIZE,fichier);
@@ -141,7 +149,7 @@ int accept_file(char *namefile){    // test if the file can be store
     fclose(fichier);
     while(1){
       printf("> You already have a file with this name, do you want to overwrite it ? (y/n)\n");
-      memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
+      memset(buffer, 0, BUFFER_SIZE);
       readline(0,buffer,BUFFER_SIZE);
       if(strncmp(buffer,"y",1)==0){
         break;
@@ -149,12 +157,12 @@ int accept_file(char *namefile){    // test if the file can be store
       if(strncmp(buffer,"n",1)==0){
         while(1){
           printf("> Do you want to save the file with an other name (if you respond n, you dined the transfer) ? (y/n)\n");
-          memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
+          memset(buffer, 0, BUFFER_SIZE);
           readline(0,buffer,BUFFER_SIZE);
           if(strncmp(buffer,"y",1)==0){
             printf("> Please enter the name of the file\n");
             while(m!=0){
-              memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
+              memset(buffer, 0, BUFFER_SIZE);
               readline(0,buffer,BUFFER_SIZE);
               if (format_name_file(buffer)==-1){
                 printf("> Do not enter a path, your file will be downloaded in your inbox directory.\n");
@@ -171,7 +179,7 @@ int accept_file(char *namefile){    // test if the file can be store
                 }
               }
             }
-            memset(namefile, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
+            memset(namefile, 0, BUFFER_SIZE);
             sprintf(namefile,"%s",buffer);
             return 0;
           }
@@ -199,6 +207,10 @@ int fill_file( char * buffer, char *path, int size){
 
 int rcv_file(char * path, int fd_rcv_file, int size){
   // fd_rcv_file = open(path,O_RDWR); // juste pour le test en vrai y'a une petit interrogation de si ça marche ou pas du coup
+  if (size == 0){
+   printf("The file is empty, transfer dined\n");
+    return -1;
+  }
   char * name = malloc(sizeof(char)*BUFFER_SIZE);
   memset(name, 0, BUFFER_SIZE);
   path_to_name(path,name);
