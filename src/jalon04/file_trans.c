@@ -63,7 +63,7 @@ int format_name_file( char *name){
 
 
 int path_to_name(char * path, char *name){
-  int i;
+  int i=0;
   int j=-1;
   while( i<strlen(path) ){
     if (strncmp(path+i,"/",1)==0) {
@@ -71,11 +71,11 @@ int path_to_name(char * path, char *name){
     }
     i++;
   }
-  while( i<strlen(path) -2 ){
-    (strncpy(name,path+i+j+i,1));
-    i++;
-  }
-  // strcpy(name,path+j+1);
+  // while( i<strlen(path) -2 ){
+  //   (strncpy(name,path+i+j+i,1));
+  //   i++;
+  // }
+  sprintf(name,"%s",path+j+1);
   // strncpy(name,"\0",strlen(name));
   return 0;
 }
@@ -133,7 +133,10 @@ int send_file( char *path, int fd_rcv_file){
     // printf("%d bits sent over %d\n",total_sent,total_to_send);
   }
   fclose(fichier);
+  printf("File send !: %s\n",path);
+  return 0;
 }
+
 
 int accept_file(char *namefile){    // test if the file can be store
   FILE * fichier;
@@ -207,10 +210,6 @@ int fill_file( char * buffer, char *path, int size){
 
 int rcv_file(char * path, int fd_rcv_file, int size){
   // fd_rcv_file = open(path,O_RDWR); // juste pour le test en vrai y'a une petit interrogation de si ça marche ou pas du coup
-  if (size == 0){
-   printf("The file is empty, transfer dined\n");
-    return -1;
-  }
   char * name = malloc(sizeof(char)*BUFFER_SIZE);
   memset(name, 0, BUFFER_SIZE);
   path_to_name(path,name);

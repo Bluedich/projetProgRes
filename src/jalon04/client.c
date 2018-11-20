@@ -83,8 +83,26 @@ void do_connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
 
 void handle_client_message(int sock, char * buffer, int * cont){
   assert(buffer);
+  char temp[BUFFER_SIZE];
+  memset(temp,0,BUFFER_SIZE);
+  sprintf(temp,"%s",buffer);
+  char temp2[BUFFER_SIZE];
+  memset(temp2,0,BUFFER_SIZE);
+  sprintf(temp2,"%s",buffer);
+  char file_name[BUFFER_SIZE];
+  memset(file_name,0,BUFFER_SIZE);
+
   if( strncmp(buffer,"/quit",5)==0 && strlen(buffer)==6){
     *cont=0; //stop client
+  }
+  if( strncmp(buffer,"/send",5)==0){
+    printf("%s\n",buffer);
+    get_next_arg(temp2, file_name);
+    memset(file_name,0,BUFFER_SIZE);// normalement inutile
+    get_next_arg(temp2, file_name);
+    memset(file_name,0,BUFFER_SIZE); // normalement inutile
+    get_next_arg(temp2, file_name);
+    sprintf(buffer,"%s %d",temp,size_of_file(file_name));
   }
   writeline(sock,"","", buffer, BUFFER_SIZE);
 }
@@ -121,10 +139,11 @@ CMD handle_server_response(int sock, char buffer[]){
   }
 }
 
-int prompt_user_for_file_transfer(char user_name[], char file_name[], int sock){
+int prompt_user_for_file_transfer(char user_name[], char file_name[],char f_size[], int sock){
   char buffer[BUFFER_SIZE];
+  int file_size = atoi(f_size);
   while(1){
-    printf("> %s wants to send file %s to you. Do you accept ? (y/n)\n", user_name, file_name );
+    printf("> %s wants to send file %s (%d bits) to you. Do you accept ? (y/n)\n", user_name, file_name, file_size);
     readline(0,buffer,BUFFER_SIZE);
     if(strncmp(buffer,"y",1)==0){
       memset(buffer, 0, BUFFER_SIZE);
@@ -156,9 +175,7 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   get_next_arg(buffer, user_name);
   get_next_arg(buffer, ipAddr);
   get_next_arg(buffer, portNum);
-  get_next_arg(buffer, file_size);
   get_next_arg(buffer, file_name);
-  f_size = atoi(file_size);
   //get address info from the server
   struct addrinfo* res;
   get_addr_info6(ipAddr, portNum, &res);
@@ -168,16 +185,20 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   //connect to remote socket
   do_connect(c_sock, res->ai_addr, res->ai_addrlen);
   readline(c_sock, buffer, BUFFER_SIZE);
-  printf("%s", buffer);
+  printf("%s to %s\n", buffer, nick);
   send_file(file_name, c_sock);
+  printf("%s Totally send\n", file_name);
+
+  return 0;
 }
 
-int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], char file_name[]){
+int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], char file_name[],char f_size[]){
   printf("Preparing to receive file\n");
   char buffer[BUFFER_SIZE];
   memset(buffer, 0, BUFFER_SIZE);
   struct sockaddr_in s_addr;
   int s_sock = do_socket();
+  int file_size = atoi(f_size);
   struct sockaddr * c_addr = (struct sockaddr *) malloc(sizeof(struct sockaddr));
   int c_addrlen = (int) sizeof(*c_addr);
   int c_sock;
@@ -192,8 +213,8 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   inet_ntop(AF_INET, &(s_addr.sin_addr), ipAddress, INET_ADDRSTRLEN);
 
   //send connection info to other client
-  int file_size = size_of_file(file_name);
-  sprintf(buffer, "/conn_info %s %s %d %d %s\n", user_name, ipAddress, port_num, file_size, file_name); fflush(stdout);
+  // int file_size = size_of_file(file_name);
+  sprintf(buffer, "/conn_info %s %s %d %s\n", user_name, ipAddress, port_num, file_name); fflush(stdout);
   writeline(sock,"","",buffer, BUFFER_SIZE);
 
   //accept connection from client
@@ -240,6 +261,8 @@ int main(int argc,char** argv) {
     char nick[BUFFER_SIZE];
     char file_name[BUFFER_SIZE];
     memset(file_name, 0, BUFFER_SIZE);
+    char file_size[BUFFER_SIZE];
+    memset(file_size, 0, BUFFER_SIZE);
     char user_name[BUFFER_SIZE];
     memset(user_name, 0, BUFFER_SIZE);
     strcpy(nick, "Guest");
@@ -286,7 +309,8 @@ int main(int argc,char** argv) {
           case FTREQ: //ask user if he wants to accept file connection
             get_next_arg(buffer, user_name);
             get_next_arg(buffer, file_name);
-            if(1==prompt_user_for_file_transfer(user_name, file_name, sock)) set_up_peer_2_peer_file_transfer(sock, nick, user_name, file_name);
+            get_next_arg(buffer, file_size);
+            if(1==prompt_user_for_file_transfer(user_name, file_name,file_size, sock)) set_up_peer_2_peer_file_transfer(sock, nick, user_name, file_name,file_size);
             break;
 
           case INFO_CONN:

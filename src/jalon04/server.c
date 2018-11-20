@@ -111,6 +111,8 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     memset(nickw, 0, BUFFER_SIZE);
     char file_name[BUFFER_SIZE];
     memset(file_name, 0, BUFFER_SIZE);
+    char file_size[BUFFER_SIZE];
+    memset(file_size, 0, BUFFER_SIZE);
     int c_sock = fd->fd;// sock client
     int i;
     int res;
@@ -128,7 +130,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     switch(cmd){
       case MSG :  // on parle dans le groupe actif
         if (strlen(client_group)==0){
-          writeline(c_sock,"Server","", "You are not in a channel. Please use /join <channel name> to join a channel", BUFFER_SIZE);
+          writeline(c_sock,"Server","", "You are not in a channel. Please use /join <channel name> to join a channel, or use /create <channel name> to create a channel. (/help gives a list of commands)", BUFFER_SIZE);
         }
         else if(pop_of_group(groups, client_group)==1){
           writeline(c_sock,"Server","", "No point in writing in the channel, no one else is here...", BUFFER_SIZE);
@@ -329,6 +331,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         separate(buffer);
         get_next_arg(buffer, nickw);
         get_next_arg(buffer, file_name);
+        get_next_arg(buffer, file_size);
         w_sock = get_fd_client_by_name(*clients, nickw);
         if(w_sock<0){
           writeline(c_sock, "Server", "", "Specified user does not exist.", BUFFER_SIZE);
@@ -338,7 +341,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         sprintf(buffer, "Waiting for %s to acknowledge your file transfer request...", nickw);
         writeline(c_sock, "Server", "", buffer, BUFFER_SIZE);
         memset(buffer, 0, BUFFER_SIZE);
-        sprintf(buffer, "/ftreq %s %s", nick, file_name);
+        sprintf(buffer, "/ftreq %s %s %s", nick, file_name, file_size);
         writeline(w_sock, "", "", buffer, BUFFER_SIZE);
         break;
 
@@ -515,10 +518,6 @@ int main(int argc, char** argv){
             // printf("ERROR, IPv4 adress used : %s\n",adresse);
           }
 
-          // add_client_to_list(&clients, c_sock, inet_ntoa( ((struct sockaddr_in * ) c_addr)->sin_addr)/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
-          // inet_ntop( AF_INET,&(((struct sockaddr_in *)c_addr)->sin_addr),adresse,INET_ADDRSTRLEN); // foes not work
-          // void * restrict src = &((struct sockaddr_in6 *) c_addr)->sin6_addr;
-          // inet_ntop( AF_INET6, ((struct sockaddr_in6 *) c_addr),adresse,INET6_ADDRSTRLEN); // foes not work
           add_client_to_list(&clients, c_sock, adresse/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
           printf("> Connection accepted \n");
           writeline(c_sock,"Server","", "Welcome to the server. Please use /nick <your_pseudo> to login", BUFFER_SIZE);  // welcome message for the client
