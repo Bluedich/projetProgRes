@@ -95,6 +95,9 @@ S_CMD get_command(char * buffer, int s_read){
   if(strncmp(buffer,"/conn_info ",11)==0 && strlen(buffer)>12)
     return CONN_INFO;
 
+  if(strncmp(buffer,"/help ",6)==0 && strlen(buffer)>6)
+    return HELP;
+
   return MSG;
 }
 

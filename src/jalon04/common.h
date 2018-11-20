@@ -23,7 +23,7 @@
 
 typedef enum {NONE, RECONNECT, CLOSE, FTREQ, USERNAME, NEWPROMPT, INFO_CONN} CMD; //commands received by client
 
-typedef enum {MSG, QUIT, NICK, MSGW, MSGALL, CREATE, LEAVE, JOIN, WHO, WHOIS, WHOINGROUP,GROUP, FTREQP, FTREQN, FTSUCCESS, SEND, CONN_INFO} S_CMD; //commands received by server
+typedef enum {MSG, QUIT, NICK, MSGW, MSGALL, CREATE, LEAVE, JOIN, WHO, WHOIS, WHOINGROUP,GROUP, FTREQP, FTREQN, FTSUCCESS, SEND, CONN_INFO, HELP} S_CMD; //commands received by server
 
 void error(const char *msg);
 
