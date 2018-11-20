@@ -133,7 +133,7 @@ int send_file( char *path, int fd_rcv_file){
     // printf("%d bits sent over %d\n",total_sent,total_to_send);
   }
   fclose(fichier);
-  printf("File send !: %s\n",path);
+  printf("File %s send\n",path);
   return 0;
 }
 
@@ -210,12 +210,16 @@ int fill_file( char * buffer, char *path, int size){
 
 int rcv_file(char * path, int fd_rcv_file, int size){
   // fd_rcv_file = open(path,O_RDWR); // juste pour le test en vrai y'a une petit interrogation de si ça marche ou pas du coup
+  if (size == 0){
+    printf("The file is empty, transfer denied\n");
+    return 0;
+  }
   char * name = malloc(sizeof(char)*BUFFER_SIZE);
   memset(name, 0, BUFFER_SIZE);
   path_to_name(path,name);
   int doo = accept_file(name);
   if (doo == -1){
-    printf("You have dined the transfer\n");
+    printf("You have denied the transfer\n");
     return 0;
   }
   char * buffer = malloc(sizeof(char)*BUFFER_SIZE);
@@ -234,6 +238,7 @@ int rcv_file(char * path, int fd_rcv_file, int size){
     fill_file(buffer,local_path,read);      // read is the number of bits read from the socket to write in the file in each passage on the loop
     nb_read=nb_read+read;
   }
+  printf("File %s receive and save in you inbox.\n",name);
 }
 
 

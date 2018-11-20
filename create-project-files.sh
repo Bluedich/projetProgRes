@@ -3,6 +3,8 @@
 #those supports files were created and tested with cmake 2.8 and eclipse cdt luna
 rm -rf build
 mkdir build
+rm -rf inbox
+mkdir inbox
 cd build
 cmake -G"Eclipse CDT4 - Unix Makefiles" -D CMAKE_BUILD_TYPE=Debug ../src/
 make

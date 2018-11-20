@@ -96,7 +96,6 @@ void handle_client_message(int sock, char * buffer, int * cont){
     *cont=0; //stop client
   }
   if( strncmp(buffer,"/send",5)==0){
-    printf("%s\n",buffer);
     get_next_arg(temp2, file_name);
     memset(file_name,0,BUFFER_SIZE);// normalement inutile
     get_next_arg(temp2, file_name);
@@ -185,9 +184,8 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   //connect to remote socket
   do_connect(c_sock, res->ai_addr, res->ai_addrlen);
   readline(c_sock, buffer, BUFFER_SIZE);
-  printf("%s to %s\n", buffer, nick);
+  printf("%s to %s\n Starting to send %s\n", buffer, nick,file_name);
   send_file(file_name, c_sock);
-  printf("%s Totally send\n", file_name);
 
   return 0;
 }
@@ -333,6 +331,7 @@ int main(int argc,char** argv) {
         }
         if(cmd == NEWPROMPT) printf(BOLDGREEN "<%s> " RESET, nick);
         else printf(BOLDGREEN "\n<%s> " RESET, nick);
+        fflush(stdout); //to make sure above printf is displayed
         fflush(stdout); //to make sure above printf is displayed
       }
 
