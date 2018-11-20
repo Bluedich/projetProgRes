@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 
-project(RE216_JALON03)
+project(RE216_JALON05)
 
+find_package (Threads)
 #add here source files you need to compile and link to the client app
 SET(SRC_CLIENT
 	common.c
@@ -10,7 +11,8 @@ SET(SRC_CLIENT
 	)
 
 
-add_executable(RE216_JALON03_CLIENT ${SRC_CLIENT})
+add_executable(RE216_JALON05_CLIENT ${SRC_CLIENT})
+target_link_libraries (RE216_JALON05_CLIENT $(CMAKE_THREAD_LIBS_INIT))
 
 
 #add here source files you need to compile and link to the server app
@@ -21,4 +23,5 @@ SET(SRC_SERVER
         server.c)
 
 
-add_executable(RE216_JALON03_SERVER  ${SRC_SERVER})
+add_executable(RE216_JALON05_SERVER  ${SRC_SERVER})
+target_link_libraries (RE216_JALON05_CLIENT $(CMAKE_THREAD_LIBS_INIT))

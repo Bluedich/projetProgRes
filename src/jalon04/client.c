@@ -194,6 +194,7 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   printf("Preparing to receive file\n");
   char buffer[BUFFER_SIZE];
   memset(buffer, 0, BUFFER_SIZE);
+  // faudrait + ou moins passer en IPv6 ici
   struct sockaddr_in s_addr;
   int s_sock = do_socket();
   int file_size = atoi(f_size);
