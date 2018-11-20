@@ -356,6 +356,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
 
       case FTREQP :
         separate(buffer);
+        memset(nickw, 0, BUFFER_SIZE);
         get_next_arg(buffer, nickw);
         w_sock = get_fd_client_by_name(*clients, nickw);
         memset(buffer, 0, BUFFER_SIZE);
@@ -365,6 +366,8 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
 
       case CONN_INFO :
         separate(buffer);
+        memset(buffer2, 0, BUFFER_SIZE);
+        memset(nickw, 0, BUFFER_SIZE);
         get_next_arg(buffer, nickw);
         w_sock = get_fd_client_by_name(*clients, nickw);
         sprintf(buffer2, "/info_conn %s %s", nick, buffer);

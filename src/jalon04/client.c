@@ -219,6 +219,7 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   c_sock = do_accept(s_sock, c_addr, &c_addrlen);
   writeline(c_sock,nick,"peer2peer","Connected",9);
   rcv_file(file_name, c_sock, file_size);
+  // exit(0);
 }
 
 int main(int argc,char** argv) {
@@ -265,6 +266,7 @@ int main(int argc,char** argv) {
     memset(user_name, 0, BUFFER_SIZE);
     strcpy(nick, "Guest");
     int cont=1;
+    int pid=0;
     CMD cmd;
     struct pollfd fds[2];
 
@@ -305,11 +307,15 @@ int main(int argc,char** argv) {
             break;
 
           case FTREQ: //ask user if he wants to accept file connection
-            get_next_arg(buffer, user_name);
-            get_next_arg(buffer, file_name);
-            get_next_arg(buffer, file_size);
-            if(1==prompt_user_for_file_transfer(user_name, file_name,file_size, sock)) set_up_peer_2_peer_file_transfer(sock, nick, user_name, file_name,file_size);
-            break;
+            // pid = fork();
+            // if (pid ==0){
+              get_next_arg(buffer, user_name);
+              get_next_arg(buffer, file_name);
+              get_next_arg(buffer, file_size);
+              if(1==prompt_user_for_file_transfer(user_name, file_name,file_size, sock)) set_up_peer_2_peer_file_transfer(sock, nick, user_name, file_name,file_size);
+              break;
+            // }
+            // break;
 
           case INFO_CONN:
             connect_to_peer_2_peer(sock, nick, buffer);
