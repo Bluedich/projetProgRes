@@ -31,7 +31,11 @@ int do_accept(int sock, struct sockaddr * c_addr, int * c_addrlen);
 
 void init_serv_addr(int port, struct sockaddr_in * s_addr);
 
+void init_serv_addr6(int port, struct sockaddr_in6 * s_addr);
+
 void do_bind(int sock, struct sockaddr_in * s_addr);
+
+void do_bind6(int sock, struct sockaddr_in6 * s_addr);
 
 int readline(int fd, char * buffer, int maxlen);
 

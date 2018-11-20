@@ -71,6 +71,7 @@ int path_to_name(char * path, char *name){
     }
     i++;
   }
+
   strcpy(name,path+j+1);
   return 0;
 }
@@ -132,15 +133,15 @@ int accept_file(char *namefile){    // test if the file can be store
   memset(buffer, 0, BUFFER_SIZE);
   char * local_path = malloc(sizeof(char)*BUFFER_SIZE);
   memset(local_path, 0, BUFFER_SIZE);
-  sprintf(local_path,"../../inbox/%s",namefile);
+  // sprintf(local_path,"../../inbox/%s",namefile);
+  sprintf(local_path,"../inbox/%s",namefile);
   fichier = fopen(local_path,"r");
   int m=-1;
   if (fichier){
     fclose(fichier);
     while(1){
       printf("> You already have a file with this name, do you want to overwrite it ? (y/n)\n");
-      sprintf(buffer,"");
-      // memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
+      memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
       readline(0,buffer,BUFFER_SIZE);
       if(strncmp(buffer,"y",1)==0){
         break;
@@ -148,14 +149,12 @@ int accept_file(char *namefile){    // test if the file can be store
       if(strncmp(buffer,"n",1)==0){
         while(1){
           printf("> Do you want to save the file with an other name (if you respond n, you dined the transfer) ? (y/n)\n");
-          sprintf(buffer,"");
-          // memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
+          memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
           readline(0,buffer,BUFFER_SIZE);
           if(strncmp(buffer,"y",1)==0){
             printf("> Please enter the name of the file\n");
             while(m!=0){
-              sprintf(buffer,"");
-              // memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
+              memset(buffer, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
               readline(0,buffer,BUFFER_SIZE);
               if (format_name_file(buffer)==-1){
                 printf("> Do not enter a path, your file will be downloaded in your inbox directory.\n");
@@ -172,8 +171,7 @@ int accept_file(char *namefile){    // test if the file can be store
                 }
               }
             }
-            sprintf(namefile,"");
-            // memset(path, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
+            memset(namefile, 0, BUFFER_SIZE);  équivalent avec ce qui est au dessus
             sprintf(namefile,"%s",buffer);
             return 0;
           }
@@ -213,7 +211,8 @@ int rcv_file(char * path, int fd_rcv_file, int size){
   memset(buffer, 0, BUFFER_SIZE);
   char * local_path = malloc(sizeof(char)*BUFFER_SIZE);
   memset(local_path, 0, BUFFER_SIZE);
-  sprintf(local_path,"../../inbox/%s",name);
+  sprintf(local_path,"../inbox/%s",name);
+  // sprintf(local_path,"../../inbox/%s",name);
 
   int read;
   int nb_read =0;

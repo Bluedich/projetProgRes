@@ -418,7 +418,7 @@ int main(int argc, char** argv){
 
       //perform the binding
       //we bind on the tcp port specified
-      sock = do_socket6(sock);
+      sock = do_socket6(/*sock*/);
       do_bind6(sock, &s_addr6);
       printf("Le binding\n");
 
