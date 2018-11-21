@@ -190,7 +190,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         if (res==0){
           change_group(*clients,"",c_sock);
           printf("> Client '%s' has left the channel '%s'.\n",nick,buffer);
-          sprintf(msg,"/username %s "BOLDBLACK"<Server>"RESET" You have quit the channel '%s'.", nick, buffer);
+          sprintf(msg,"/username %s "BOLDBLACK"<Server> You have quit the channel '%s'." RESET, nick, buffer);
           writeline(c_sock,"","", msg, BUFFER_SIZE);
           break;
         }
@@ -198,7 +198,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           remove_group(groups,buffer);
           printf("> Client '%s' has left the channel '%s' and Channel '%s' destroyed.\n",nick,buffer, buffer);
           change_group(*clients,"",c_sock);
-          sprintf(msg,"/username %s "BOLDBLACK"<Server>"RESET" You have quit the channel '%s' and the channel is destroyed.", nick, buffer);
+          sprintf(msg,"/username %s "BOLDBLACK"<Server> You have quit the channel '%s' and the channel is destroyed." RESET, nick, buffer);
           writeline(c_sock,"","", msg, BUFFER_SIZE);
           break;
         }
@@ -245,7 +245,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         }
         else {
           change_group(*clients,buffer,c_sock);
-          sprintf(msg,"/username %s><%s "BOLDBLACK"<Server>"RESET" You have joined the channel '%s'.",nick, buffer, buffer);
+          sprintf(msg,"/username %s><%s "BOLDBLACK"<Server> You have joined the channel '%s'." RESET,nick, buffer, buffer);
           writeline(c_sock,"","", msg, BUFFER_SIZE);
         }
         break;
@@ -321,10 +321,10 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
             memset(buffer, 0, BUFFER_SIZE);
             has_nick(*clients, nick, c_sock);
             if(hasGroup){
-              sprintf(buffer, "/username %s><%s "BOLDBLACK"<Server>"RESET" Nickname set. You can now use the server !", nick, client_group);
+              sprintf(buffer, "/username %s><%s "BOLDBLACK"<Server> Nickname set. You can now use the server !" RESET, nick, client_group);
             }
             else{
-              sprintf(buffer, "/username %s "BOLDBLACK"<Server>"RESET" Nickname set. You can now use the server !", nick);
+              sprintf(buffer, "/username %s "BOLDBLACK"<Server> Nickname set. You can now use the server !" RESET, nick);
             }
             writeline(c_sock,"","",buffer, BUFFER_SIZE);
           }
