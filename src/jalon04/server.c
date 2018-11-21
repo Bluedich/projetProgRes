@@ -95,7 +95,7 @@ S_CMD get_command(char * buffer, int s_read){
   if(strncmp(buffer,"/conn_info ",11)==0 && strlen(buffer)>12)
     return CONN_INFO;
 
-  if(strncmp(buffer,"/help ",6)==0 && strlen(buffer)>6)
+  if( (strncmp(buffer,"/help ",6)==0 && strlen(buffer)>6) || strncmp(buffer,"/",1)==0)
     return HELP;
 
   return MSG;
@@ -336,7 +336,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         get_next_arg(buffer, file_name);
         get_next_arg(buffer, file_size);
         w_sock = get_fd_client_by_name(*clients, nickw);
-        if(w_sock<0){
+        if(w_sock==-1){
           writeline(c_sock, "Server", "", "Specified user does not exist.", BUFFER_SIZE);
           break;
         }
@@ -353,8 +353,14 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         get_next_arg(buffer, nickw);
         w_sock = get_fd_client_by_name(*clients, nickw);
         memset(buffer, 0, BUFFER_SIZE);
-        sprintf(buffer, "User %s has declined your file transfer request.", nick);
-        writeline(w_sock, "Server", "", buffer, BUFFER_SIZE);
+        if (w_sock == -1){
+          sprintf(buffer, "User %s does not exist.", nick);
+          writeline(c_sock, "Server", "", buffer, BUFFER_SIZE);
+      }
+        else{
+          sprintf(buffer, "User %s has declined your file transfer request.", nick);
+          writeline(w_sock, "Server", "", buffer, BUFFER_SIZE);
+      }
         break;
 
       case FTREQP :
@@ -363,8 +369,14 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         get_next_arg(buffer, nickw);
         w_sock = get_fd_client_by_name(*clients, nickw);
         memset(buffer, 0, BUFFER_SIZE);
-        sprintf(buffer, "User %s has accepted your file transfer request.", nick);
-        writeline(w_sock, "Server", "", buffer, BUFFER_SIZE);
+        if (w_sock == -1){
+          sprintf(buffer, "User %s does not exist.", nick);
+          writeline(c_sock, "Server", "", buffer, BUFFER_SIZE);
+        }
+        else{
+          sprintf(buffer, "User %s has accepted your file transfer request.", nick);
+          writeline(w_sock, "Server", "", buffer, BUFFER_SIZE);
+        }
         break;
 
       case CONN_INFO :
@@ -373,10 +385,20 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         memset(nickw, 0, BUFFER_SIZE);
         get_next_arg(buffer, nickw);
         w_sock = get_fd_client_by_name(*clients, nickw);
-        sprintf(buffer2, "/info_conn %s %s", nick, buffer);
-        printf("Sent command : %s\n", buffer2);
-        writeline(w_sock, "", "", buffer2, BUFFER_SIZE);
+        if (w_sock == -1){
+          sprintf(buffer, "User %s does not exist.", nick);
+          writeline(c_sock, "Server", "", buffer, BUFFER_SIZE);
+      }
+        else{
+          sprintf(buffer2, "/info_conn %s %s", nick, buffer);
+          printf("Sent command : %s\n", buffer2);
+          writeline(w_sock, "", "", buffer2, BUFFER_SIZE);
+        }
         break;
+
+      case HELP:
+        sprintf(buffer2,"The different command are :\n/quit\n/quit <your_groupname>\n/create <groupname>\n/join <groupname>\n/msg <username> <your_message>\n/msgall <your_message>\n/nick <your_nickname>\n/who\n/whois <username>\n/send <username> <filename>");
+        writeline(c_sock,"Server","",buffer2,BUFFER_SIZE);
     }
 
   /*if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5){

@@ -67,7 +67,7 @@ int get_fd_client_by_name(struct list * clients, char name[]){
   int res = get_client_by_nick(clients, &client, name);
   if (res==-1) {
     printf("ERROR : Tried to get fd of non-existing client.\n");
-    return 1;
+    return -1;
   }
   return client->fd;
 }
