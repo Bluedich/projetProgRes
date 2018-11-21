@@ -472,9 +472,8 @@ int main(int argc, char** argv){
     if(strlen(argv[1])>5){ // test bidon pour savoir si on est en v6
       IPv6=1;
     }
-    IPv6=1; // Normalement quant on est en IPv6 c'est compatible ipv4, sauf pour l'adresse IP du client quand il se connecte
     if(IPv6==1){
-      printf("C'est de l'IPv6\n");
+      printf("IPv6 and IPv4 are supported, transfer of file impossible\n");
       memset(&s_addr6, 0, sizeof(s_addr6));
       init_serv_addr6(atoi(argv[1]), &s_addr6);
       printf("Et on a intialisé le server\n");
@@ -490,6 +489,7 @@ int main(int argc, char** argv){
       printf("> Waiting for connection v6 : \n");
       }
     else {
+      printf("Only IPv4 supported, transfer of file allowed\n");
       memset(&s_addr, 0, sizeof(s_addr));
       init_serv_addr(atoi(argv[1]), &s_addr);
 
@@ -557,25 +557,20 @@ int main(int argc, char** argv){
           fds[get_available_fd_index(fds)].fd = c_sock;
           switch(c_addr->sa_family) {
             case AF_INET:
-              // inet_pton(AF_INET, buffer, &(((struct sockaddr_in *)c_addr)->sin_addr));
               inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
-              // printf("Tentative of connection from ipv4 adress : %s\n",adresse);
               break;
             case AF_INET6:
-              inet_pton(AF_INET6, buffer, &(((struct sockaddr_in6 *)c_addr)->sin6_addr));
               inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)c_addr)->sin6_addr),adresse, INET6_ADDRSTRLEN);
-              // printf("Tentative of connection from ipv6 adress: %s\n",adresse);
               break;
             default:
               strncpy(buffer, "Unknown AF", INET6_ADDRSTRLEN);
-              // printf("Tentative of connection from Unknown protocol : %s\n",adresse);
               }
           if(strcmp(adresse,"::")==0){
-            inet_pton(AF_INET, buffer, &(((struct sockaddr_in *)c_addr)->sin_addr));
             inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
-            // printf("ERROR, IPv4 adress used : %s\n",adresse);
           }
-
+          if(strcmp(adresse,"0.0.0.0")==0){
+            inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
+          }
           add_client_to_list(&clients, c_sock, adresse/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
           printf("> Connection accepted \n");
           writeline(c_sock,"Server","", "Welcome to the server. Please use /nick <your_pseudo> to login", BUFFER_SIZE);  // welcome message for the client
