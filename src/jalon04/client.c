@@ -188,7 +188,7 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   get_next_arg(buffer, file_name);
   f_size = size_of_file(file_name);
   if (f_size==0){
-    printf("File '%s' is an empty file, transfer dined",file_name);
+    printf("File '%s' is an empty file, transfer denied",file_name);
     return -1;
   }
   //get address info from the server
