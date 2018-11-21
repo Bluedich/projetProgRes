@@ -188,7 +188,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         if (res==0){
           change_group(*clients,"",c_sock);
           printf("> Client '%s' has left the channel '%s'.\n",nick,buffer);
-          sprintf(msg,"/username %s "BOLDBLACK" <Server>"RESET" You have quit the channel '%s'.", nick, buffer);
+          sprintf(msg,"/username %s "BOLDBLACK"<Server>"RESET" You have quit the channel '%s'.", nick, buffer);
           writeline(c_sock,"","", msg, BUFFER_SIZE);
           break;
         }
@@ -196,7 +196,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           remove_group(groups,buffer);
           printf("> Client '%s' has left the channel '%s' and Channel '%s' destroyed.\n",nick,buffer, buffer);
           change_group(*clients,"",c_sock);
-          sprintf(msg,"/username %s "BOLDBLACK" <Server>"RESET" You have quit the channel '%s' and the channel is destroyed.", nick, buffer);
+          sprintf(msg,"/username %s "BOLDBLACK"<Server>"RESET" You have quit the channel '%s' and the channel is destroyed.", nick, buffer);
           writeline(c_sock,"","", msg, BUFFER_SIZE);
           break;
         }
@@ -243,7 +243,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         }
         else {
           change_group(*clients,buffer,c_sock);
-          sprintf(msg,"/username %s><%s "BOLDBLACK" <Server>"RESET" You have joined the channel '%s'.",nick, buffer, buffer);
+          sprintf(msg,"/username %s><%s "BOLDBLACK"<Server>"RESET" You have joined the channel '%s'.",nick, buffer, buffer);
           writeline(c_sock,"","", msg, BUFFER_SIZE);
         }
         break;
@@ -284,7 +284,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         }
         separate(buffer);
         sprintf(msg, "%s\n", buffer);
-        writeline(w_sock,"whisper", nick, buffer, BUFFER_SIZE);
+        writeline(w_sock, nick, "whisper", buffer, BUFFER_SIZE);
         writeline(c_sock,"","","/newprompt", BUFFER_SIZE); //to force a new <name> prompt in client
         break;
 
@@ -301,7 +301,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         for (res=0;res<nb_client;res++){// utilisation de res pour faire le clochard et pas definir un i, c'est un peu con en vrai
           if (sock_tab[res]!=c_sock){// ne l'affiche pas à l'expéditeur
           sprintf(msg,"%s",buffer);
-            writeline(sock_tab[res], "broadcast", nick, buffer, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
+            writeline(sock_tab[res], nick, "broadcast", buffer, BUFFER_SIZE); // peut être il faudra rajouter un argument s_sock à wirteline pour savoir qui parle, c'est pas frocément le server mtn
           }
         }
         writeline(c_sock,"","","/newprompt", BUFFER_SIZE); //to force a new <name> prompt in client
@@ -319,10 +319,10 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
             memset(buffer, 0, BUFFER_SIZE);
             has_nick(*clients, nick, c_sock);
             if(hasGroup){
-              sprintf(buffer, "/username %s><%s "BOLDBLACK" <Server>"RESET" Nickname set. You can now use the server !", nick, client_group);
+              sprintf(buffer, "/username %s><%s "BOLDBLACK"<Server>"RESET" Nickname set. You can now use the server !", nick, client_group);
             }
             else{
-              sprintf(buffer, "/username %s "BOLDBLACK" <Server>"RESET" Nickname set. You can now use the server !", nick);
+              sprintf(buffer, "/username %s "BOLDBLACK"<Server>"RESET" Nickname set. You can now use the server !", nick);
             }
             writeline(c_sock,"","",buffer, BUFFER_SIZE);
           }
