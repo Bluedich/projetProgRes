@@ -33,6 +33,9 @@ int write_in_group(struct listg ** groups, char group_name[], char nick[], int c
 //print the list of the channel in the server with the number of client in which server
 int print_group(struct listg * groups, char group_list[]);
 
+//get all the fd the list of the channel in the server with the number of client in which server
+int get_all_client_in_group(struct listg ** groups, char group_name[], int fds[]);
+
 //remove client with fd c_sock, in the group with name name
 int remove_client_in_group(struct listg ** groups, int c_sock, char name[]);
 

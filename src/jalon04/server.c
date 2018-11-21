@@ -65,6 +65,12 @@ S_CMD get_command(char * buffer, int s_read){
   if(strncmp(buffer,"/join ",6)==0 && strlen(buffer)>7)
     return JOIN;  // join a group
 
+  if(strncmp(buffer,"/group",6)==0 && strlen(buffer)<8)
+    return GROUP;  // get information of all the group of the server
+
+  if(strncmp(buffer,"/group ",7)==0 && strlen(buffer)>7)
+    return WHOINGROUP;  // get information of all the group of the server
+
   if(strncmp(buffer,"/msg ",5)==0 && strlen(buffer)>6)
     return MSGW;  // whisper to a user
 
@@ -102,24 +108,24 @@ S_CMD get_command(char * buffer, int s_read){
 }
 
 int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd, struct listg ** groups){
-    char buffer2[BUFFER_SIZE];
-    memset(buffer2, 0, BUFFER_SIZE);
-    char nick[BUFFER_SIZE];
+    // char buffer2[BUFFER_SIZE];
+    // memset(buffer2, 0, BUFFER_SIZE);
+    char nick[BUFFER_SIZE];                 // nickname of the speaking user
     memset(nick, 0, BUFFER_SIZE);
     char client_group[BUFFER_SIZE];
-    memset(client_group, 0, BUFFER_SIZE);
+    memset(client_group, 0, BUFFER_SIZE);   // nickname of an other user which can be filled
     char nickw[BUFFER_SIZE];
     memset(nickw, 0, BUFFER_SIZE);
     char msg[BUFFER_SIZE];
     memset(nickw, 0, BUFFER_SIZE);
-    char file_name[BUFFER_SIZE];
+    char file_name[BUFFER_SIZE];            // for file transfer
     memset(file_name, 0, BUFFER_SIZE);
-    char file_size[BUFFER_SIZE];
+    char file_size[BUFFER_SIZE];            // used for file transfer
     memset(file_size, 0, BUFFER_SIZE);
     int c_sock = fd->fd;// sock client
     int i;
-    int res;
-    int w_sock;         // stock the socket of the client you whisper to
+    int res;            // used to store the return value of function
+    int w_sock;         // sock of an other user
     int nb_client;      // number of client conected to the server
     int sock_tab[20];   //array wich will contain all the sock of all the clients in a group
     int hasNick = has_nick(*clients, nick, c_sock);
@@ -240,6 +246,28 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           writeline(c_sock,"","", msg, BUFFER_SIZE);
         }
         break;
+
+      case GROUP:
+        print_group(*groups,msg);
+        writeline(c_sock,"Server","", msg, BUFFER_SIZE);    //msg contain the group name pass in argument
+        break;
+
+      case WHOINGROUP:
+        get_arg_in_command(buffer, msg);
+        nb_client = get_all_client_in_group(groups, msg,sock_tab);
+        if (res == -1){
+          sprintf(buffer,"The group %s does not exsit",msg);
+        }
+        else{
+          sprintf(buffer,"In the group %s ther are the client :",msg);
+          for (i=0;i<nb_client;i++){
+            res = get_nick(*clients,sock_tab[i],nickw);
+            if (res == -1){sprintf(buffer,"ERROR getting client by fd");}
+            else{sprintf(buffer,"\n     %s",nickw);}
+        }
+        writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
+      }
+
 
       case MSGW :
         separate(buffer);     // pour enlever la commande
@@ -381,7 +409,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
 
       case CONN_INFO :
         separate(buffer);
-        memset(buffer2, 0, BUFFER_SIZE);
+        memset(msg, 0, BUFFER_SIZE);
         memset(nickw, 0, BUFFER_SIZE);
         get_next_arg(buffer, nickw);
         w_sock = get_fd_client_by_name(*clients, nickw);
@@ -390,15 +418,15 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
           writeline(c_sock, "Server", "", buffer, BUFFER_SIZE);
       }
         else{
-          sprintf(buffer2, "/info_conn %s %s", nick, buffer);
-          printf("Sent command : %s\n", buffer2);
-          writeline(w_sock, "", "", buffer2, BUFFER_SIZE);
+          sprintf(msg, "/info_conn %s %s", nick, buffer);
+          printf("Sent command : %s\n", msg);
+          writeline(w_sock, "", "", msg, BUFFER_SIZE);
         }
         break;
 
       case HELP:
-        sprintf(buffer2,"The different command are :\n/quit\n/quit <your_groupname>\n/create <groupname>\n/join <groupname>\n/msg <username> <your_message>\n/msgall <your_message>\n/nick <your_nickname>\n/who\n/whois <username>\n/send <username> <filename>");
-        writeline(c_sock,"Server","",buffer2,BUFFER_SIZE);
+        sprintf(msg,"The different command are :\n/quit\n/quit <your_groupname>\n/create <groupname>\n/join <groupname>\n/msg <username> <your_message>\n/msgall <your_message>\n/nick <your_nickname>\n/who\n/whois <username>\n/send <username> <filename>");
+        writeline(c_sock,"Server","",msg,BUFFER_SIZE);
     }
 
   /*if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5){

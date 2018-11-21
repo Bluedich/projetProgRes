@@ -107,6 +107,24 @@ int fd_in_tab(int fds[], int c_sock){
   error("Pas dans le groupe");
 }
 
+int get_all_client_in_group(struct listg ** groups, char group_name[], int fds[]){
+  struct group * group = (struct group *) malloc(sizeof(struct group));
+  int res=0;
+  res = get_group_by_name(groups, &group,  group_name);
+  if (res ==-1){
+    printf("FATAL ERROR : The channel %s that does not exist.\n",group_name );
+    return -1;
+  }
+  int i;
+  int nb_client = 0;
+  for(i=0; i<MAX_CL; i++){
+    if(group->fd[i] != -1)
+      fds[i]=group->fd[i];
+      nb_client++;
+  }
+  return nb_client;
+}
+
 int nb_client_in_group(int fds[]){
   int i;
   int nb_client = 0;
