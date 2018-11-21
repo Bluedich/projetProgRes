@@ -1,6 +1,6 @@
 #include "common.h"
 #include "file_trans.h"
-
+#include <pthread.h>
 #include <netdb.h>
 
 void get_addr_info(const char* addr, const char* port, struct addrinfo** res){
@@ -223,6 +223,11 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   // exit(0);
 }
 
+void *  test(void * ok){
+  printf("Bon ça, ça marche peut être pas\n");
+  return NULL;
+}
+
 int main(int argc,char** argv) {
 
     if (argc != 3)
@@ -235,6 +240,9 @@ int main(int argc,char** argv) {
     struct sockaddr_in6 * c_addr;
     struct in6_addr serveraddr;
     int addrlen= sizeof(c_addr);
+    pthread_t *thread;
+    void * ok;
+    pthread_create(thread,NULL,test,ok);
 
     //get address info from the server
     get_addr_info6(argv[1], argv[2], &res);

@@ -31,6 +31,7 @@ void init_serv_addr6(int port, struct sockaddr_in6 * s_addr){
   s_addr->sin6_family = AF_INET6;
   s_addr->sin6_port = htons(port);
   s_addr->sin6_addr = in6addr_any;
+  // s_addr->sin6_scope_id = 0;
 }
 
 void do_bind6(int sock, struct sockaddr_in6 * s_addr){
