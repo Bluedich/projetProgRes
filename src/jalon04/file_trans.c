@@ -237,7 +237,7 @@ int rcv_file(char * path, int fd_rcv_file, int size){
     fill_file(buffer,local_path,read);      // read is the number of bits read from the socket to write in the file in each passage on the loop
     nb_read=nb_read+read;
   }
-  printf("File %s received and saved in your inbox.\n",name);
+  printf("File %s received and saved in your inbox.",name);
 }
 
 

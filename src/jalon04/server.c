@@ -469,7 +469,7 @@ int main(int argc, char** argv){
     if(strlen(argv[1])>5){ // test bidon pour savoir si on est en v6
       IPv6=1;
     }
-    IPv6=1; // Normalement quant on est en IPv6 c'est compatible ipv4, sauf pour l'adresse IP du client quand il se connecte
+    IPv6=0; // Normalement quant on est en IPv6 c'est compatible ipv4, sauf pour l'adresse IP du client quand il se connecte
     if(IPv6==1){
       printf("C'est de l'IPv6\n");
       memset(&s_addr6, 0, sizeof(s_addr6));
@@ -552,11 +552,9 @@ int main(int argc, char** argv){
           memset(c_addr, 0, sizeof(*c_addr));
           c_sock = do_accept(sock, c_addr, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
-          memset(buffer, 0, BUFFER_SIZE);
-          readline(c_sock, buffer, BUFFER_SIZE);
           switch(c_addr->sa_family) {
             case AF_INET:
-              inet_pton(AF_INET, buffer, &(((struct sockaddr_in *)c_addr)->sin_addr));
+              // inet_pton(AF_INET, buffer, &(((struct sockaddr_in *)c_addr)->sin_addr));
               inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
               // printf("Tentative of connection from ipv4 adress : %s\n",adresse);
               break;

@@ -240,6 +240,11 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   //accept connection from client
   c_sock = do_accept(s_sock, c_addr, &c_addrlen);
   writeline(c_sock,nick,"peer2peer","Connected",9);
+  printf("file of %d bits ready to be received\n",file_size);
+  if (file_size == 0){
+    printf("File '%s' is an empty file, transfer canceled",file_name);
+    return -1;
+  }
   err = rcv_file(file_name, c_sock, file_size);
   if (err == -1){
     printf("File '%s' is an empty file, transfer canceled",file_name);
@@ -283,7 +288,6 @@ int main(int argc,char** argv) {
         break;
       }
     do_connect(sock, res->ai_addr, res->ai_addrlen);
-    write(sock,argv[1],BUFFER_SIZE);
 
 
     char buffer[BUFFER_SIZE];
