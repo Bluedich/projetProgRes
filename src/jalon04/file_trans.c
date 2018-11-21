@@ -97,7 +97,7 @@ int size_of_file(char *path){
 int send_file( char *path, int fd_rcv_file){
   int total_to_send=size_of_file(path); // comme cela ou en argument
   if (total_to_send == 0){
-    // printf("The file is empty, transfer dined\n");
+    // printf("The file is empty, transfer denied\n");
     return -1;
   }
   int read = 0;
@@ -158,7 +158,7 @@ int accept_file(char *namefile){    // test if the file can be store
       }
       if(strncmp(buffer,"n",1)==0){
         while(1){
-          printf("> Do you want to save the file with an other name (if you respond n, you dined the transfer) ? (y/n)\n");
+          printf("> Do you want to save the file with an other name (if you respond n, transfer will be canceled) ? (y/n)\n");
           memset(buffer, 0, BUFFER_SIZE);
           readline(0,buffer,BUFFER_SIZE);
           if(strncmp(buffer,"y",1)==0){
