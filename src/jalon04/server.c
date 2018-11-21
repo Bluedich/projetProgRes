@@ -472,7 +472,7 @@ int main(int argc, char** argv){
     if(strlen(argv[1])>5){ // test bidon pour savoir si on est en v6
       IPv6=1;
     }
-    IPv6=0; // Normalement quant on est en IPv6 c'est compatible ipv4, sauf pour l'adresse IP du client quand il se connecte
+    IPv6=1; // Normalement quant on est en IPv6 c'est compatible ipv4, sauf pour l'adresse IP du client quand il se connecte
     if(IPv6==1){
       printf("C'est de l'IPv6\n");
       memset(&s_addr6, 0, sizeof(s_addr6));
