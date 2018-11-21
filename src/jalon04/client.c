@@ -161,20 +161,28 @@ int prompt_user_for_file_transfer(char user_name[], char file_name[],char f_size
 
 int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   printf("Preparing to send file\n");
-  char ipAddr[INET_ADDRSTRLEN];
-  char portNum[BUFFER_SIZE];
-  //memset(portNum,0,BUFFER_SIZE);
+
   char user_name[BUFFER_SIZE];
-  //memset(user_name,0,BUFFER_SIZE);
+  memset(user_name,0,BUFFER_SIZE);
+  char ipAddr[INET_ADDRSTRLEN];
+  memset(ipAddr,0,INET_ADDRSTRLEN);
+  char portNum[BUFFER_SIZE];
+  memset(portNum,0,BUFFER_SIZE);
   char file_name[BUFFER_SIZE];
-  //memset(file_name,0,BUFFER_SIZE);
-  char file_size[BUFFER_SIZE];
+  memset(file_name,0,BUFFER_SIZE);
   int f_size;
+
+  int err;
   //receive connection information
   get_next_arg(buffer, user_name);
   get_next_arg(buffer, ipAddr);
   get_next_arg(buffer, portNum);
   get_next_arg(buffer, file_name);
+  f_size = size_of_file(file_name);
+  if (f_size==0){
+    printf("File '%s' is an empty file, transfer dined",file_name);
+    return -1;
+  }
   //get address info from the server
   struct addrinfo* res;
   get_addr_info6(ipAddr, portNum, &res);
@@ -184,9 +192,13 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   //connect to remote socket
   do_connect(c_sock, res->ai_addr, res->ai_addrlen);
   readline(c_sock, buffer, BUFFER_SIZE);
-  printf("%s to %s\n Starting to send %s\n", buffer, nick,file_name);
-  send_file(file_name, c_sock);
-
+  printf("%s to %s\n Starting to send '%s'\n", buffer, nick,file_name);
+  err = send_file(file_name, c_sock);
+  if (err == -1){
+    printf("File '%s' is an empty file, transfer dined",file_name);
+    return -1;
+  }
+  printf("File '%s' succesfully send",file_name);
   return 0;
 }
 
@@ -201,6 +213,7 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   struct sockaddr * c_addr = (struct sockaddr *) malloc(sizeof(struct sockaddr));
   int c_addrlen = (int) sizeof(*c_addr);
   int c_sock;
+  int err;
   memset(&s_addr, 0, sizeof(s_addr));
   init_serv_addr(0, &s_addr);
   do_bind(s_sock, &s_addr);
@@ -219,14 +232,19 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   //accept connection from client
   c_sock = do_accept(s_sock, c_addr, &c_addrlen);
   writeline(c_sock,nick,"peer2peer","Connected",9);
-  rcv_file(file_name, c_sock, file_size);
-  // exit(0);
+  err = rcv_file(file_name, c_sock, file_size);
+  if (err == -1){
+    printf("File '%s' is an empty file, transfer canceled",file_name);
+    return -1;
+  }
+  if (err == -2){
+    printf("You have canceled the transfer");
+    return -2;
+  }
+  // printf("File %s succesfully receive and store in your inbox\n",file_name); // fait dans file_trans.c
+  return 0;
 }
 
-// void *  test(void * ok){
-//   printf("Bon ça, ça marche peut être pas\n");
-//   return NULL;
-// }
 
 int main(int argc,char** argv) {
 
@@ -240,9 +258,6 @@ int main(int argc,char** argv) {
     struct sockaddr_in6 * c_addr;
     struct in6_addr serveraddr;
     int addrlen= sizeof(c_addr);
-    // pthread_t *thread;
-    // void * ok;
-    // pthread_create(thread,NULL,test,ok);
 
     //get address info from the server
     get_addr_info6(argv[1], argv[2], &res);
