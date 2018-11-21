@@ -10,6 +10,7 @@
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <time.h>
 
 #define BUFFER_SIZE 1024
 #define MAX_NICK_SIZE 64

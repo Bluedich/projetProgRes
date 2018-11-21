@@ -251,13 +251,13 @@ int main(int argc,char** argv) {
     //connect to remote socket
     switch(res->ai_addr->sa_family){
       case AF_INET:
-        printf("> protocole used : IPv4\n");
+        printf("> Protocol used : IPv4\n");
         break;
       case AF_INET6:
-        printf("> protocole used : IPv6\n");
+        printf("> Protocol used : IPv6\n");
         break;
       default:
-      printf("> protocole used : Unknown\n");
+      printf("> Protocol used : Unknown\n");
         break;
       }
     do_connect(sock, res->ai_addr, res->ai_addrlen);
@@ -273,6 +273,10 @@ int main(int argc,char** argv) {
     memset(file_size, 0, BUFFER_SIZE);
     char user_name[BUFFER_SIZE];
     memset(user_name, 0, BUFFER_SIZE);
+    time_t rawtime;
+    time(&rawtime);
+    char current_time[512];
+    strftime(current_time, 512, "%T", localtime(&rawtime));
     strcpy(nick, "Guest");
     int cont=1;
     int pid=0;
@@ -344,8 +348,8 @@ int main(int argc,char** argv) {
           default:
             error("Unrecognized client-side command");
         }
-        if(cmd == NEWPROMPT) printf(BOLDGREEN "<%s> " RESET, nick);
-        else printf(BOLDGREEN "\n<%s> " RESET, nick);
+        if(cmd == NEWPROMPT) printf(BOLDGREEN " [%s] <%s> " RESET, current_time, nick);
+        else printf(BOLDGREEN "\n [%s] <%s> " RESET, current_time, nick);
         fflush(stdout); //to make sure above printf is displayed
         fflush(stdout); //to make sure above printf is displayed
       }
