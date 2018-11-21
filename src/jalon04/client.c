@@ -195,6 +195,7 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
     printf("File '%s' is an empty file, transfer denied",file_name);
     return -1;
   }
+
   //get address info from the server
   printf("Connecting to IP address %s et %s\n",ipAddr,ipAddrInterface);
   struct addrinfo* res;
@@ -219,14 +220,14 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   printf("Preparing to receive file\n");
   char buffer[BUFFER_SIZE];
   memset(buffer, 0, BUFFER_SIZE);
-  // faudrait + ou moins passer en IPv6 ici
+  int file_size = atoi(f_size);
+  int err;
+
   struct sockaddr_in6 s_addr;
   int s_sock = do_socket6_s();
-  int file_size = atoi(f_size);
   struct sockaddr * c_addr = (struct sockaddr *) malloc(sizeof(struct sockaddr));
   int c_addrlen = (int) sizeof(*c_addr);
   int c_sock;
-  int err;
   memset(&s_addr, 0, sizeof(s_addr));
   init_serv_addr6(0, &s_addr);
   do_bind6(s_sock, &s_addr);
@@ -264,6 +265,7 @@ int main(int argc,char** argv) {
         printf("usage: RE216_CLIENT hostname port\n");
         return 1;
     }
+
     struct addrinfo* res;
     int sock;
     struct sockaddr_in6 * c_addr;
@@ -275,17 +277,8 @@ int main(int argc,char** argv) {
     //get the socket
     sock = do_socket6(res);
     //connect to remote socket
-    switch(res->ai_addr->sa_family){
-      case AF_INET:
-        printf("> Protocol used : IPv4");
-        break;
-      case AF_INET6:
-        printf("> Protocol used : IPv6");
-        break;
-      default:
-      printf("> Protocol used : Unknown");
-        break;
-      }
+    printf("IPv6 used");
+
     do_connect(sock, res->ai_addr, res->ai_addrlen);
 
 

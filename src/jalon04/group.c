@@ -350,7 +350,7 @@ int print_group(struct listg * groups, char group_list[]){
   struct listg * current = groups;
   while(current!=NULL){
     if(current->group!=NULL){
-      sprintf(group_list,"%s                      -Channel '%s' with %d client(s) conected in the channel\n",group_list, current->group->name, nb_client_in_group(current->group->fd));
+      sprintf(group_list,"%s The different Channel of the Server are :\n                   -Channel '%s' with %d client(s) conected in the channel",group_list, current->group->name, nb_client_in_group(current->group->fd));
     }
       current = current->next;
   }

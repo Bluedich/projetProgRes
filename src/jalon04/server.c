@@ -46,8 +46,8 @@ S_CMD get_command(char * buffer, int s_read){
   if(strncmp(buffer,"/group",6)==0 && strlen(buffer)<8)
     return GROUP;  // get information of all the group of the server
 
-  if(strncmp(buffer,"/group ",7)==0 && strlen(buffer)>7)
-    return WHOINGROUP;  // get information of all the group of the server
+  // if(strncmp(buffer,"/group ",7)==0 && strlen(buffer)>7)
+  //   return WHOINGROUP;  // get information of all the group of the server
 
   if(strncmp(buffer,"/msg ",5)==0 && strlen(buffer)>6)
     return MSGW;  // whisper to a user
@@ -95,7 +95,7 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     char nickw[BUFFER_SIZE];
     memset(nickw, 0, BUFFER_SIZE);
     char msg[BUFFER_SIZE];
-    memset(nickw, 0, BUFFER_SIZE);
+    memset(msg, 0, BUFFER_SIZE);
     char file_name[BUFFER_SIZE];            // for file transfer
     memset(file_name, 0, BUFFER_SIZE);
     char file_size[BUFFER_SIZE];            // used for file transfer
@@ -232,21 +232,26 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         writeline(c_sock,"Server","", msg, BUFFER_SIZE);    //msg contain the group name pass in argument
         break;
 
-      case WHOINGROUP:
-        get_arg_in_command(buffer, msg);
-        nb_client = get_all_client_in_group(groups, msg,sock_tab);
-        if (res == -1){
-          sprintf(buffer,"The group %s does not exsit",msg);
-        }
-        else{
-          sprintf(buffer,"In the group %s ther are the client :",msg);
-          for (i=0;i<nb_client;i++){
-            res = get_nick(*clients,sock_tab[i],nickw);
-            if (res == -1){sprintf(buffer,"ERROR getting client by fd");}
-            else{sprintf(buffer,"\n     %s",nickw);}
-        }
-        writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
-      }
+      // case WHOINGROUP:
+      //   separate(buffer);
+      //   get_arg_in_command(buffer, msg);
+      //   nb_client = get_all_client_in_group(groups, msg,sock_tab);
+      //   if (res == -1){
+      //     sprintf(buffer,"The group %s does not exsit",msg);
+      //   }
+      //   else{
+      //     sprintf(buffer,"In the group %s there are the client :",msg);
+      //     i=0;
+      //     while (i<nb_client){
+      //       if (sock_tab[i]==-1){i++;}
+      //       else {
+      //       res = get_nick(*clients,sock_tab[i],nickw);
+      //       if (res == -1){sprintf(buffer,"ERROR getting client by fd");}
+      //       else{sprintf(buffer,"\n     %s",nickw);}
+      //     }
+      //   }
+      //   writeline(c_sock,"Server","", buffer, BUFFER_SIZE);
+      // }
 
 
       case MSGW :
@@ -419,37 +424,18 @@ int main(int argc, char** argv){
         return 1;
     }
     //init the serv_addr structure
-    int IPv6=0;
     struct sockaddr_in6 s_addr6;
-    struct sockaddr_in s_addr;
-
     //create the socket, check for validity!
     int sock;
+    printf("IPv6 and IPv4 are supported\n");
+    memset(&s_addr6, 0, sizeof(s_addr6));
+    init_serv_addr6(atoi(argv[1]), &s_addr6);
+    //perform the binding
+    //we bind on the tcp port specified
+    sock = do_socket6_s(/*sock*/);
+    do_bind6(sock, &s_addr6);
+    //specify the socket to be a server socket
 
-    if(strlen(argv[1])>5){ // test bidon pour savoir si on est en v6
-      IPv6=1;
-    }
-    if(IPv6==1){
-      printf("IPv6 and IPv4 are supported, transfer of file impossible\n");
-      memset(&s_addr6, 0, sizeof(s_addr6));
-      init_serv_addr6(atoi(argv[1]), &s_addr6);
-      //perform the binding
-      //we bind on the tcp port specified
-      sock = do_socket6_s(/*sock*/);
-      do_bind6(sock, &s_addr6);
-      //specify the socket to be a server socket
-      }
-    else {
-      printf("Only IPv4 are supported, transfer of file allowed\n");
-      memset(&s_addr, 0, sizeof(s_addr));
-      init_serv_addr(atoi(argv[1]), &s_addr);
-
-      //perform the binding
-      //we bind on the tcp port specified
-      sock = do_socket(sock);
-      do_bind(sock, &s_addr);
-      //specify the socket to be a server socket
-    }
     listen(sock, -1);
     printf("> Waiting for connection : \n");
 
@@ -508,23 +494,8 @@ int main(int argc, char** argv){
           c_sock = do_accept(sock, c_addr2, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
           getpeername(c_sock,c_addr, &c_addrlen);
-          switch(c_addr->sa_family){ // ne fonctionne pas
-            case AF_INET:
-              inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
-              break;
-            case AF_INET6:
-              inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)c_addr)->sin6_addr),adresse, INET6_ADDRSTRLEN);
-              break;
-            default:
-              strncpy(buffer, "Unknown AF", INET6_ADDRSTRLEN);
-              }
-          if(strcmp(adresse,"::")==0){
-            inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
-          }
-          if(strcmp(adresse,"0.0.0.0")==0){
-            inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
-          }
-          printf("> addresse %s accepted avant stockage\n",adresse );
+          inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)c_addr)->sin6_addr),adresse, INET6_ADDRSTRLEN);
+          printf("> Connection from %s accepted\n",adresse );
 
           add_client_to_list(&clients, c_sock, adresse/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
           printf("> Connection accepted\n");

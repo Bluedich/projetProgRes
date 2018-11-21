@@ -3,7 +3,7 @@
 struct client{
   char nickname[MAX_NICK_SIZE];
   char group[MAX_NICK_SIZE];
-  char ip_addr[BUFFER_SIZE];
+  char ip_addr[INET6_ADDRSTRLEN];
   int port_nb;
   int hasNick;
   int fd;
