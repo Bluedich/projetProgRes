@@ -47,4 +47,7 @@ int exists(struct list * clients, char nick[]);
 //returns info on a users
 int get_info(struct list * clients, char buffer[], char nick[]);
 
+//returns ip adress in buffer
+int get_ip_addr(struct list * clients, char nick[], char buffer[]);
+
 #endif

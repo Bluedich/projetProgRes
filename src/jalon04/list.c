@@ -1,5 +1,4 @@
 #include "common.h"
-#include <time.h>
 
 struct client{
   char nickname[MAX_NICK_SIZE];
@@ -184,6 +183,17 @@ int get_online_users(struct list * clients, char buffer[]){
     strcat(buffer, temp);
   }
   strcat(buffer, " Use /whois <nickname> to get more info on a user\n");
+  return 0;
+}
+
+int get_ip_addr(struct list * clients, char nick[], char buffer[]){
+  struct client * client;
+  char nickname[BUFFER_SIZE];
+  strcpy(nickname, nick);
+  format_nick(nickname);
+  get_client_by_nick(clients, &client, nickname);
+  memset(buffer, 0, BUFFER_SIZE);
+  strcpy(buffer, client->ip_addr);
   return 0;
 }
 

@@ -123,6 +123,8 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
     memset(file_name, 0, BUFFER_SIZE);
     char file_size[BUFFER_SIZE];            // used for file transfer
     memset(file_size, 0, BUFFER_SIZE);
+    char ip_addr[BUFFER_SIZE];
+    memset(ip_addr, 0, BUFFER_SIZE);
     int c_sock = fd->fd;// sock client
     int i;
     int res;            // used to store the return value of function
@@ -414,12 +416,13 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         memset(nickw, 0, BUFFER_SIZE);
         get_next_arg(buffer, nickw);
         w_sock = get_fd_client_by_name(*clients, nickw);
+        get_ip_addr(*clients, nick, ip_addr);
         if (w_sock == -1){
           sprintf(buffer, "User %s does not exist.", nick);
           writeline(c_sock, "Server", "", buffer, BUFFER_SIZE);
       }
         else{
-          sprintf(msg, "/info_conn %s %s", nick, buffer);
+          sprintf(msg, "/info_conn %s %s %s", nick, buffer, ip_addr);
           printf("Sent command : %s\n", msg);
           writeline(w_sock, "", "", msg, BUFFER_SIZE);
         }
