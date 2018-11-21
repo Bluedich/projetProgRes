@@ -141,7 +141,7 @@ CMD handle_server_response(int sock, char buffer[]){
   }
   else{
     getCurrentTime(current_time);
-    printf("[%s] %s", current_time, buffer);
+    printf("\n[%s] %s", current_time, buffer);
     return NONE;
   }
 }
@@ -203,10 +203,10 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   printf("%s to %s\n Starting to send '%s'\n", buffer, nick,file_name);
   err = send_file(file_name, c_sock);
   if (err == -1){
-    printf("File '%s' is an empty file, transfer dined",file_name);
+    printf("File '%s' is an empty file, transfer denied",file_name);
     return -1;
   }
-  printf("File '%s' succesfully send",file_name);
+  printf("File '%s' successfully sent.",file_name);
   return 0;
 }
 
@@ -244,10 +244,6 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
     return -1;
   }
   err = rcv_file(file_name, c_sock, file_size);
-  if (err == -1){
-    printf("File '%s' is an empty file, transfer canceled",file_name);
-    return -1;
-  }
   if (err == -2){
     printf("You have canceled the transfer");
     return -2;
