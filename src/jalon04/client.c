@@ -172,8 +172,10 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
 
   char user_name[BUFFER_SIZE];
   memset(user_name,0,BUFFER_SIZE);
-  char ipAddr[INET_ADDRSTRLEN];
-  memset(ipAddr,0,INET_ADDRSTRLEN);
+  char ipAddr[INET6_ADDRSTRLEN];
+  memset(ipAddr,0,INET6_ADDRSTRLEN);
+  char ipAddrInterface[INET6_ADDRSTRLEN];
+  memset(ipAddrInterface,0,INET6_ADDRSTRLEN);
   char portNum[BUFFER_SIZE];
   memset(portNum,0,BUFFER_SIZE);
   char file_name[BUFFER_SIZE];
@@ -186,15 +188,17 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   get_next_arg(buffer, portNum);
   get_next_arg(buffer, file_name);
   get_next_arg(buffer, ipAddr);
+  sprintf(ipAddrInterface,"%s%%2",ipAddr);
+
   f_size = size_of_file(file_name);
   if (f_size==0){
     printf("File '%s' is an empty file, transfer denied",file_name);
     return -1;
   }
   //get address info from the server
-  printf("Connecting to IP address %s\n",ipAddr);
+  printf("Connecting to IP address %s et %s\n",ipAddr,ipAddrInterface);
   struct addrinfo* res;
-  get_addr_info6(ipAddr, portNum, &res);
+  get_addr_info6(ipAddrInterface, portNum, &res);
   //get the socket
   int c_sock;
   c_sock = do_socket6(res);
@@ -216,19 +220,19 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   char buffer[BUFFER_SIZE];
   memset(buffer, 0, BUFFER_SIZE);
   // faudrait + ou moins passer en IPv6 ici
-  struct sockaddr_in s_addr;
-  int s_sock = do_socket();
+  struct sockaddr_in6 s_addr;
+  int s_sock = do_socket6_s();
   int file_size = atoi(f_size);
   struct sockaddr * c_addr = (struct sockaddr *) malloc(sizeof(struct sockaddr));
   int c_addrlen = (int) sizeof(*c_addr);
   int c_sock;
   int err;
   memset(&s_addr, 0, sizeof(s_addr));
-  init_serv_addr(0, &s_addr);
-  do_bind(s_sock, &s_addr);
+  init_serv_addr6(0, &s_addr);
+  do_bind6(s_sock, &s_addr);
   int s_addr_len = sizeof(s_addr);
   getsockname(s_sock, (struct sockaddr*) &s_addr, (socklen_t *) &s_addr_len);
-  int port_num = (int) ntohs(s_addr.sin_port);
+  int port_num = (int) ntohs(s_addr.sin6_port);
   listen(s_sock, -1);
 
   //send connection info to other client
@@ -273,13 +277,13 @@ int main(int argc,char** argv) {
     //connect to remote socket
     switch(res->ai_addr->sa_family){
       case AF_INET:
-        printf("> Protocol used : IPv4\n");
+        printf("> Protocol used : IPv4");
         break;
       case AF_INET6:
-        printf("> Protocol used : IPv6\n");
+        printf("> Protocol used : IPv6");
         break;
       default:
-      printf("> Protocol used : Unknown\n");
+      printf("> Protocol used : Unknown");
         break;
       }
     do_connect(sock, res->ai_addr, res->ai_addrlen);
@@ -338,15 +342,11 @@ int main(int argc,char** argv) {
             break;
 
           case FTREQ: //ask user if he wants to accept file connection
-            // pid = fork();
-            // if (pid ==0){
               get_next_arg(buffer, user_name);
               get_next_arg(buffer, file_name);
               get_next_arg(buffer, file_size);
               if(1==prompt_user_for_file_transfer(user_name, file_name,file_size, sock)) set_up_peer_2_peer_file_transfer(sock, nick, user_name, file_name,file_size);
               break;
-            // }
-            // break;
 
           case INFO_CONN:
             connect_to_peer_2_peer(sock, nick, buffer);

@@ -12,6 +12,32 @@ void init_serv_addr(int port, struct sockaddr_in * s_addr){
   s_addr->sin_addr.s_addr = INADDR_ANY;
 }
 
+void init_serv_addr6(int port, struct sockaddr_in6 * s_addr){
+  s_addr->sin6_family = AF_INET6;
+  s_addr->sin6_port = htons(port);
+  s_addr->sin6_addr = in6addr_any;
+  // s_addr->sin6_scope_id = 0;
+}
+
+void do_bind6(int sock, struct sockaddr_in6 * s_addr){
+  assert(s_addr);
+  if (bind(sock, (const struct sockaddr *) s_addr, sizeof(*s_addr)) == -1)
+    error("ERROR binding");
+}
+
+int do_socket6_s(){
+  int fd = socket(AF_INET6, SOCK_STREAM, 0);
+  if(fd == -1)
+    error("ERROR creating socket");
+  int yes = 1;
+  // set socket option, to prevent "already in use" issue when rebooting the server right on
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+      error("ERROR setting socket options");
+  return fd;
+}
+
+
+
 int readline(int fd, char * buffer, int maxlen){
   assert(buffer);
   memset(buffer, 0, maxlen);

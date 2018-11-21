@@ -16,29 +16,6 @@ int do_socket(){
   return fd;
 }
 
-int do_socket6(){
-  int fd = socket(AF_INET6, SOCK_STREAM, 0);
-  if(fd == -1)
-    error("ERROR creating socket");
-  int yes = 1;
-  // set socket option, to prevent "already in use" issue when rebooting the server right on
-  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
-      error("ERROR setting socket options");
-  return fd;
-}
-
-void init_serv_addr6(int port, struct sockaddr_in6 * s_addr){
-  s_addr->sin6_family = AF_INET6;
-  s_addr->sin6_port = htons(port);
-  s_addr->sin6_addr = in6addr_any;
-  // s_addr->sin6_scope_id = 0;
-}
-
-void do_bind6(int sock, struct sockaddr_in6 * s_addr){
-  assert(s_addr);
-  if (bind(sock, (const struct sockaddr *) s_addr, sizeof(*s_addr)) == -1)
-    error("ERROR binding");
-}
 
 int get_available_fd_index(struct pollfd * fds){
   int i;
@@ -429,30 +406,10 @@ int command(char * buffer, S_CMD cmd, struct list ** clients, struct pollfd * fd
         break;
 
       case HELP:
-        sprintf(msg,"Available commands are :\n/quit\n/quit <current_groupname>\n/create <groupname>\n/join <groupname>\n/msg <username> <your_message>\n/msgall <your_message>\n/nick <desired_nickname>\n/who\n/whois <username>\n/send <username> <filename>");
+        sprintf(msg,"Available commands are :\n/quit\n/quit <current_groupname>\n/create <groupname>\n/join <groupname>\n/group\n/group <groupname>\n/msg <username> <your_message>\n/msgall <your_message>\n/nick <desired_nickname>\n/who\n/whois <username>\n/send <username> <filename>");
         writeline(c_sock,"Server","",msg,BUFFER_SIZE);
     }
 
-  /*if(strncmp(buffer,"/who",4)==0 && strlen(buffer)==5){
-    writeline(c_sock,"> Client connected\n",BUFFER_SIZE);
-    int i;
-    for (i=0;i<2;i++){
-      writeline(c_sock,clients[i].nickname,BUFFER_SIZE);
-      writeline(c_sock,"\n",BUFFER_SIZE);
-    }
-    return -1;
-  }
-
-  if(strncmp(buffer,"/whois",6)==0){
-
-  }
-
-  else{
-    printf("> [%s] : %s", clients[c_sock-4].nickname, buffer);
-    //server response
-    writeline(c_sock, buffer, BUFFER_SIZE);
-  }
-  return 0;*/
 }
 
 int main(int argc, char** argv){
@@ -461,8 +418,8 @@ int main(int argc, char** argv){
         printf("usage: RE216_SERVER port\n");
         return 1;
     }
-    int IPv6=0;
     //init the serv_addr structure
+    int IPv6=0;
     struct sockaddr_in6 s_addr6;
     struct sockaddr_in s_addr;
 
@@ -476,20 +433,14 @@ int main(int argc, char** argv){
       printf("IPv6 and IPv4 are supported, transfer of file impossible\n");
       memset(&s_addr6, 0, sizeof(s_addr6));
       init_serv_addr6(atoi(argv[1]), &s_addr6);
-      printf("Et on a intialisé le server\n");
-
       //perform the binding
       //we bind on the tcp port specified
-      sock = do_socket6(/*sock*/);
+      sock = do_socket6_s(/*sock*/);
       do_bind6(sock, &s_addr6);
-      printf("Le binding\n");
-
       //specify the socket to be a server socket
-      listen(sock, -1);
-      printf("> Waiting for connection v6 : \n");
       }
     else {
-      printf("Only IPv4 supported, transfer of file allowed\n");
+      printf("Only IPv4 are supported, transfer of file allowed\n");
       memset(&s_addr, 0, sizeof(s_addr));
       init_serv_addr(atoi(argv[1]), &s_addr);
 
@@ -497,11 +448,10 @@ int main(int argc, char** argv){
       //we bind on the tcp port specified
       sock = do_socket(sock);
       do_bind(sock, &s_addr);
-
       //specify the socket to be a server socket
-      listen(sock, -1);
-      printf("> Waiting for connection : \n");
     }
+    listen(sock, -1);
+    printf("> Waiting for connection : \n");
 
     //buffer init
     char * in_buf = (char *) malloc(6*sizeof(char));
@@ -510,6 +460,8 @@ int main(int argc, char** argv){
     char adresse[INET6_ADDRSTRLEN];
 
     struct sockaddr * c_addr = (struct sockaddr *) malloc(sizeof(struct sockaddr));
+    struct sockaddr * c_addr2 = (struct sockaddr *) malloc(sizeof(struct sockaddr));
+
     int c_addrlen;
     int c_sock;
     int s_read;
@@ -552,10 +504,11 @@ int main(int argc, char** argv){
         //accept connection from client
         if(get_available_fd_index(fds) != -1){
           c_addrlen = sizeof(*c_addr);
-          memset(c_addr, 0, sizeof(*c_addr));
-          c_sock = do_accept(sock, c_addr, &c_addrlen);
+          memset(c_addr, 0, sizeof(*c_addr2));
+          c_sock = do_accept(sock, c_addr2, &c_addrlen);
           fds[get_available_fd_index(fds)].fd = c_sock;
-          switch(c_addr->sa_family) {
+          getpeername(c_sock,c_addr, &c_addrlen);
+          switch(c_addr->sa_family){ // ne fonctionne pas
             case AF_INET:
               inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
               break;
@@ -571,8 +524,10 @@ int main(int argc, char** argv){
           if(strcmp(adresse,"0.0.0.0")==0){
             inet_ntop(AF_INET, &(((struct sockaddr_in *)c_addr)->sin_addr),adresse, INET_ADDRSTRLEN);
           }
+          printf("> addresse %s accepted avant stockage\n",adresse );
+
           add_client_to_list(&clients, c_sock, adresse/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
-          printf("> Connection accepted \n");
+          printf("> Connection accepted\n");
           writeline(c_sock,"Server","", "Welcome to the server. Please use /nick <your_pseudo> to login", BUFFER_SIZE);  // welcome message for the client
         }
 

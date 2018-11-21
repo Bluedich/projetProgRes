@@ -38,6 +38,8 @@ void do_bind(int sock, struct sockaddr_in * s_addr);
 
 void do_bind6(int sock, struct sockaddr_in6 * s_addr);
 
+int do_socket6_s();
+
 int readline(int fd, char * buffer, int maxlen);
 
 int writeline(int fd_rcv, char * nick, char * group, char * buffer, int maxlen);
