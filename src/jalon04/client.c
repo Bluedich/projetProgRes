@@ -192,6 +192,7 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
     return -1;
   }
   //get address info from the server
+  printf("Connecting to IP address %s\n",ipAddr);
   struct addrinfo* res;
   get_addr_info6(ipAddr, portNum, &res);
   //get the socket
@@ -200,7 +201,7 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   //connect to remote socket
   do_connect(c_sock, res->ai_addr, res->ai_addrlen);
   readline(c_sock, buffer, BUFFER_SIZE);
-  printf("%s to %s\n Starting to send '%s'\n", buffer, nick,file_name);
+  printf("%s to %s\nStarting to send '%s'\n", buffer, nick,file_name);
   err = send_file(file_name, c_sock);
   if (err == -1){
     printf("File '%s' is an empty file, transfer dined",file_name);
