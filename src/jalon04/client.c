@@ -183,9 +183,9 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   int err;
   //receive connection information
   get_next_arg(buffer, user_name);
-  get_next_arg(buffer, ipAddr);
   get_next_arg(buffer, portNum);
   get_next_arg(buffer, file_name);
+  get_next_arg(buffer, ipAddr);
   f_size = size_of_file(file_name);
   if (f_size==0){
     printf("File '%s' is an empty file, transfer denied",file_name);
@@ -230,12 +230,10 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   getsockname(s_sock, (struct sockaddr*) &s_addr, (socklen_t *) &s_addr_len);
   int port_num = (int) ntohs(s_addr.sin_port);
   listen(s_sock, -1);
-  char ipAddress[INET_ADDRSTRLEN];
-  inet_ntop(AF_INET, &(s_addr.sin_addr), ipAddress, INET_ADDRSTRLEN);
 
   //send connection info to other client
   // int file_size = size_of_file(file_name);
-  sprintf(buffer, "/conn_info %s %s %d %s\n", user_name, ipAddress, port_num, file_name); fflush(stdout);
+  sprintf(buffer, "/conn_info %s %d %s\n", user_name, port_num, file_name); fflush(stdout);
   writeline(sock,"","",buffer, BUFFER_SIZE);
 
   //accept connection from client
