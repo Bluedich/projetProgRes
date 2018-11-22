@@ -495,11 +495,8 @@ int main(int argc, char** argv){
           fds[get_available_fd_index(fds)].fd = c_sock;
           getpeername(c_sock,c_addr, &c_addrlen);
           inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)c_addr)->sin6_addr),adresse, INET6_ADDRSTRLEN);
-          printf("> Connection from %s accepted\n",adresse );
-          // if (strcmp(adresse,"::1")==0){
-          //   inet_ntop(AF_INET6, &(&s_addr6)->sin6_addr,adresse, INET6_ADDRSTRLEN);
-          //   printf("> Connection from localhost, utilisation of Server adress %s\n",adresse );
-          // }
+          printf("> Connection from the address %s accepted\n",adresse );
+
           add_client_to_list(&clients, c_sock, adresse/*ip address*/, (int) ntohs( ((struct sockaddr_in * ) c_addr)->sin_port)/*port nb*/);
           printf("> Connection accepted\n");
           writeline(c_sock,"Server","", "Welcome to the server. Please use /nick <your_pseudo> to login", BUFFER_SIZE);  // welcome message for the client

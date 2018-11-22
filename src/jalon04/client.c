@@ -167,7 +167,7 @@ int prompt_user_for_file_transfer(char user_name[], char file_name[],char f_size
   }
 }
 
-int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
+int connect_to_peer_2_peer(int sock, char nick[], char buffer[],char *argv[]){
   printf("Preparing to send file\n");
 
   char user_name[BUFFER_SIZE];
@@ -188,7 +188,11 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   get_next_arg(buffer, portNum);
   get_next_arg(buffer, file_name);
   get_next_arg(buffer, ipAddr);
-  sprintf(ipAddrInterface,"%s%%2",ipAddr);
+  if (strcmp(ipAddr,"::1")==0 || strcmp(ipAddr,"::ffff:127.0.0.1") || strcmp(ipAddr,"::") ){
+    sprintf(ipAddrInterface,"%s",argv[1]);
+    printf("> Connection on localhost, utilisation of Server adress %s\n",ipAddrInterface );
+  }
+  else {sprintf(ipAddrInterface,"%s%%2",ipAddr);}
 
   f_size = size_of_file(file_name);
   if (f_size==0){
@@ -197,7 +201,6 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[]){
   }
 
   //get address info from the server
-  printf("Connecting to IP address %s et %s\n",ipAddr,ipAddrInterface);
   struct addrinfo* res;
   get_addr_info6(ipAddrInterface, portNum, &res);
   //get the socket
@@ -342,7 +345,7 @@ int main(int argc,char** argv) {
               break;
 
           case INFO_CONN:
-            connect_to_peer_2_peer(sock, nick, buffer);
+            connect_to_peer_2_peer(sock, nick, buffer,argv);
             break;
 
           case USERNAME:
