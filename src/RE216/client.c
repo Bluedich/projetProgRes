@@ -188,7 +188,7 @@ int connect_to_peer_2_peer(int sock, char nick[], char buffer[],char *argv[]){
   get_next_arg(buffer, portNum);
   get_next_arg(buffer, file_name);
   get_next_arg(buffer, ipAddr);
-  if (strcmp(ipAddr,"::1")==0 || strcmp(ipAddr,"::ffff:127.0.0.1")==0 || strcmp(ipAddr,"::")==0 ){
+  if ( (strcmp(ipAddr,"::1")==0) || (strncmp(ipAddr,"::ffff:127",10)==0) ){
     sprintf(ipAddrInterface,"%s",argv[1]);
     printf("> Connection on localhost, utilisation of Server adress %s\n",ipAddrInterface );
   }
