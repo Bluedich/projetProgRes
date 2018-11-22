@@ -244,14 +244,14 @@ int set_up_peer_2_peer_file_transfer(int sock, char nick[], char user_name[], ch
   sprintf(buffer, "/conn_info %s %d %s\n", user_name, port_num, file_name); fflush(stdout);
   writeline(sock,"","",buffer, BUFFER_SIZE);
 
-  //accept connection from client
-  c_sock = do_accept(s_sock, c_addr, &c_addrlen);
-  writeline(c_sock,nick,"peer2peer","Connected",9);
-  printf("file of %d bits ready to be received\n",file_size);
   if (file_size == 0){
     printf("File '%s' is an empty file, transfer canceled",file_name);
     return -1;
   }
+  //accept connection from client
+  c_sock = do_accept(s_sock, c_addr, &c_addrlen);
+  writeline(c_sock,nick,"peer2peer","Connected",9);
+  printf("file of %d bits ready to be received\n",file_size);
   err = rcv_file(file_name, c_sock, file_size);
   if (err == -2){
     printf("You have canceled the transfer");
