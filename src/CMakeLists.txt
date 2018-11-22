@@ -4,4 +4,4 @@ project(RE216)
 
 
 
-add_subdirectory(jalon04)
+add_subdirectory(RE216)
