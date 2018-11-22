@@ -115,7 +115,7 @@ int writeline(int fd_rcv, char nick[], char group[], char * buffer, int maxlen){
     sprintf(temp, BOLDBLUE "<%s><%s>" RESET " %s", nick, group, buffer);
 }
   if ( (strlen(nick)>0) && (strlen(group)==0) ){
-    if(strncmp(nick, "Server", 6)==0) sprintf(temp, BOLDBLACK"<%s> %s" RESET, nick, buffer);
+    if(strncmp(nick, "Server", 6)==0) sprintf(temp, BOLDBLACK"<%s> %s" RESET, nick, buffer); 
     else sprintf(temp, BOLDBLUE "<%s>" RESET " %s", nick, buffer);
   }
 
