@@ -179,7 +179,7 @@ int add_client_in_group(struct listg ** groups, int c_sock, char name[]){
 
   struct listg * current = before->next;
   if(current == NULL){
-    printf("ERROR trying BBjoin the group %s : no group with this tag\n",name);
+    printf("ERROR trying to join the group %s : no group with this name.\n",name);
     return -1; // there is no this group
   }
 
@@ -212,7 +212,7 @@ int add_client_in_group(struct listg ** groups, int c_sock, char name[]){
     return 0;
   }
 
-  printf("ERROR trying AAjoin the group %s : no group with this tag\n",name);
+  printf("ERROR trying to join the group %s : no group with this tag\n",name);
   return -1; // le groupe existe pas
 
 }
@@ -222,7 +222,7 @@ int client_is_in_group(struct listg ** groups, int c_sock, char name[]){ // test
   struct listg * before = *groups;
 
   if(before == NULL){
-    printf("ERROR trying join the group : there no existing group\nYou can create one with /group <groupname> \n");
+    printf("ERROR trying join the group : there are no existing groups. \nYou can create one with /group <groupname> \n");
     return -1;  // the group does not exist
   }
   if( strcmp(before->group->name,name)==0){ // c'est le groupe dans lequel on veut savoir si le client y est
@@ -231,7 +231,7 @@ int client_is_in_group(struct listg ** groups, int c_sock, char name[]){ // test
 
   struct listg * current = before->next;
   if(current == NULL)
-  printf("ERROR trying to join the group %s : no group with this tag\n",name);
+  printf("ERROR trying to join the group %s : no group with this name.\n",name);
     return -1; // the group does not exist
 
   while (current->next != NULL){
@@ -245,7 +245,7 @@ int client_is_in_group(struct listg ** groups, int c_sock, char name[]){ // test
   if(strcmp(current->group->name,name)==0){ // c'est le groupe dans lequel on veut ajouter le client
   return fd_in_tab(current->group->fd,c_sock);
   }
-  printf("ERROR trying AAjoin the group %s : no group with this tag\n",name);
+  printf("ERROR trying to join the group %s : no group with this name.\n",name);
   return -1; // the group does not exist
 
 }
@@ -312,7 +312,7 @@ int remove_client_in_group(struct listg ** groups, int c_sock, char name[]){
 int remove_group(struct listg ** groups, char name[]){
   struct listg * before = *groups;
   if(before == NULL){
-    printf("ERROR trying to remove : there no existing group\n");
+    printf("ERROR trying to remove : there are no existing groups\n");
     return -1;  // the group does not exist
   }
   if( (strcmp(before->group->name,name)==0) ){
@@ -344,13 +344,13 @@ int remove_group(struct listg ** groups, char name[]){
 
 int print_group(struct listg * groups, char group_list[]){
   if(groups==NULL){
-    sprintf(group_list,"There is no channel in the server\nUse /create <channel_name> to create one\n");
+    sprintf(group_list,"There are no channels on the server.\nUse /create <channel_name> to create one\n");
     return -1;
   }
   struct listg * current = groups;
   while(current!=NULL){
     if(current->group!=NULL){
-      sprintf(group_list,"%s The different Channel of the Server are :\n                   -Channel '%s' with %d client(s) conected in the channel",group_list, current->group->name, nb_client_in_group(current->group->fd));
+      sprintf(group_list,"%s Available channels are :\n                   -'%s' with %d client(s) connected",group_list, current->group->name, nb_client_in_group(current->group->fd));
     }
       current = current->next;
   }

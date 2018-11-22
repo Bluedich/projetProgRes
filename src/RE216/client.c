@@ -150,7 +150,7 @@ int prompt_user_for_file_transfer(char user_name[], char file_name[],char f_size
   char buffer[BUFFER_SIZE];
   int file_size = atoi(f_size);
   while(1){
-    printf("> %s wants to send file %s (%d bits) to you. Do you accept ? (y/n)\n", user_name, file_name, file_size);
+    printf("> %s wants to send file %s (%d bytes) to you. Do you accept ? (y/n)\n", user_name, file_name, file_size);
     readline(0,buffer,BUFFER_SIZE);
     if(strncmp(buffer,"y",1)==0){
       memset(buffer, 0, BUFFER_SIZE);
